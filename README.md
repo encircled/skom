@@ -1,3 +1,6 @@
+[![CI build](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml/badge.svg)](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml)
+[![codecov](https://codecov.io/gh/encircled/skom/branch/master/graph/badge.svg)](https://codecov.io/gh/skom/Joiner)
+
 # Simple Kotlin Object Mapper
 
 Kotlin reflection-based object mapping
