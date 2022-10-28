@@ -1,5 +1,5 @@
 [![CI build](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml/badge.svg)](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml)
-[![codecov](https://codecov.io/gh/encircled/skom/branch/master/graph/badge.svg)](https://codecov.io/gh/encircled/skom)
+[![codecov](https://codecov.io/gh/encircled/skom/branch/main/graph/badge.svg)](https://codecov.io/gh/encircled/skom)
 
 # Simple Kotlin Object Mapper
 
