@@ -2,7 +2,10 @@ package cz.encircled.skom
 
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
-import kotlin.reflect.*
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KParameter
+import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.javaType
 
@@ -67,6 +70,13 @@ open class SimpleKotlinObjectMapper(
         return target as T
     }
 
+    internal fun <T : Any> convertValue(value: T?, target: KType): Any? {
+        if (value == null) return null
+        val javaType = target.javaType
+        if (value::class.java == javaType) return value
+        return convertValue(value, javaType)
+    }
+
     internal fun <T : Any> convertValue(value: T?, target: Type): Any? {
         if (value == null || value::class.java == target) return value
 
@@ -90,6 +100,10 @@ open class SimpleKotlinObjectMapper(
                     val plainConverter = config.directConverters[value::class to target]
                     when {
                         plainConverter != null -> plainConverter.invoke(value)
+                        value is Enum<*> && target.isEnum -> java.lang.Enum.valueOf(
+                            target as Class<out Enum<*>>,
+                            value.name
+                        )
                         target == String::class.java -> value.toString()
                         else -> value
                     }
@@ -99,13 +113,6 @@ open class SimpleKotlinObjectMapper(
                 }
             }
         }
-    }
-
-    internal fun <T : Any> convertValue(value: T?, target: KType): Any? {
-        if (value == null) return null
-        val javaType = target.javaType
-        if (value::class.java == javaType) return value
-        return convertValue(value, javaType)
     }
 
 }
