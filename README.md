@@ -51,14 +51,16 @@ data class To(
 )
 
 val mapper = SimpleKotlinObjectMapper {
-    addPropertyAlias(From::class, To::class, "firstName", "name")
+    forClasses(From::class, To::class) {
+        addPropertyAlias("firstName", "name")
+    }
 }
 
 val mapped: To = From("John").mapTo()
 assertEquals(To("John"), mapped)
 ```
 
-## Custom mapping
+## Custom dynamic mapping
 
 ```kotlin
 data class From(
@@ -71,8 +73,10 @@ data class To(
 )
 
 val mapper = SimpleKotlinObjectMapper {
-    addMapping(From::class, To::class) {
-        mapOf("name" to "${it.firstName} ${it.lastName}")
+    forClasses(From::class, To::class) {
+        addPropertyMappings {
+            mapOf("name" to "${it.firstName} ${it.lastName}")
+        }
     }
 }
 
@@ -102,6 +106,20 @@ val mapper = SimpleKotlinObjectMapper {
 
 val mapped: To = From(123).mapTo()
 assertEquals(To("123 $"), mapped)
+```
+
+## Enum mapping
+
+Enums are mapped out of the box using the name.
+
+Custom enums mapping is added via:
+
+```kotlin
+SimpleKotlinObjectMapper {
+    forClasses(EnumA::class, EnumB::class) {
+        addEnumMapping(EnumA.A, EnumB.B)
+    }
+}
 ```
 
 ## Performance

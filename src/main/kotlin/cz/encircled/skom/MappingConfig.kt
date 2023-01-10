@@ -8,6 +8,7 @@ class MappingConfig(
 ) {
 
     internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor> = mutableMapOf()
+    internal val enumMappers: MutableMap<FromToJava, MutableMap<Any, Any>> = mutableMapOf()
     internal val customMappers: MutableMap<FromTo, (Any) -> Map<String, Any?>> = mutableMapOf()
     internal val propertyAliases: MutableMap<FromTo, MutableMap<String, String>> = mutableMapOf()
     internal val directConverters: MutableMap<FromToJava, (Any) -> Any> = mutableMapOf()
@@ -19,6 +20,20 @@ class MappingConfig(
 
             addConverter(Short::class, Boolean::class) { it == 1.toShort() }
         }
+    }
+
+    fun <F : Any, T : Any> forClasses(
+        from: KClass<F>,
+        to: KClass<T>,
+        init: MappingConfigBuilder<F, T>.() -> Unit
+    ): MappingConfig {
+        val forClasses = MappingConfigBuilder(this, from, to)
+        forClasses.init()
+        return this
+    }
+
+    fun <F : Any, T : Any> addConverter(from: KClass<F>, to: KClass<T>, mapper: (F) -> T) {
+        directConverters[from to to.java] = mapper as (Any) -> Any
     }
 
     private fun addStringToNumberConverters() {
@@ -47,22 +62,34 @@ class MappingConfig(
         addConverter(BigDecimal::class, Int::class) { it.toInt() }
     }
 
-    fun <F : Any, T : Any> addMapping(from: KClass<F>, to: KClass<T>, mapper: (F) -> Map<String, Any?>) {
+    internal fun <F : Any, T : Any> addMapping(from: KClass<F>, to: KClass<T>, mapper: (F) -> Map<String, Any?>) {
         customMappers[from to to] = mapper as (Any) -> Map<String, Any?>
     }
 
-    fun <F : Any, T : Any> addConverter(from: KClass<F>, to: KClass<T>, mapper: (F) -> T) {
-        directConverters[from to to.java] = mapper as (Any) -> Any
+    internal fun <F : Any, T : Any> addEnumMapping(from: KClass<F>, to: KClass<T>, left: Enum<*>, right: Enum<*>) {
+        val leftToRight = enumMappers.computeIfAbsent(from to to.java) { hashMapOf() }
+        leftToRight[left] = right
+        val rightToLeft = enumMappers.computeIfAbsent(to to from.java) { hashMapOf() }
+        rightToLeft[right] = left
     }
 
-    fun <F : Any, T : Any> addPropertyAlias(from: KClass<F>, to: KClass<T>, sourceName: String, targetName: String) {
+    internal fun <F : Any, T : Any> addPropertyAlias(
+        from: KClass<F>,
+        to: KClass<T>,
+        sourceName: String,
+        targetName: String
+    ) {
         val fromTo = from to to
-        propertyAliases.putIfAbsent(fromTo, mutableMapOf())
-        propertyAliases.getValue(fromTo)[sourceName] = targetName
+        val aliases = propertyAliases.computeIfAbsent(fromTo) { hashMapOf() }
+        aliases[sourceName] = targetName
     }
 
-    fun <F : Any, T : Any> builder(from: KClass<F>, to: KClass<T>): MappingConfigBuilder<F, T> {
-        return MappingConfigBuilder(this, from, to)
+    internal fun directConverter(value: Any, target: TypeWrapper): ((Any) -> Any)? {
+        return directConverters[value::class to target.type]
+    }
+
+    internal fun enumMapper(value: Any, target: TypeWrapper): MutableMap<Any, Any>? {
+        return enumMappers[value::class to target.type]
     }
 
     class MappingConfigBuilder<F : Any, T : Any>(
@@ -70,7 +97,7 @@ class MappingConfig(
         val from: KClass<F>,
         val to: KClass<T>,
     ) {
-        fun addMapping(mapper: (F) -> Map<String, Any?>): MappingConfigBuilder<F, T> {
+        fun addPropertyMappings(mapper: (F) -> Map<String, Any?>): MappingConfigBuilder<F, T> {
             config.addMapping(from, to, mapper)
             return this
         }
@@ -79,8 +106,6 @@ class MappingConfig(
             config.addPropertyAlias(from, to, sourceName, targetName)
             return this
         }
-
-        fun config(): MappingConfig = config
 
     }
 

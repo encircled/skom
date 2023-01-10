@@ -16,19 +16,19 @@ class ExtensionsTest {
 
             assertEquals(SimpleTarget("1", "2", null), actual)
         } finally {
-            Extensions.setDefaultMapper(SimpleKotlinObjectMapper(MappingConfig()))
+            Extensions.setDefaultMapper(SimpleKotlinObjectMapper {})
         }
     }
 
     @Test
-    fun `map set`() {
+    fun `map a set`() {
         val actual = setOf(SimpleSource("", "")).mapTo<SimpleTargetWithDefault>()
 
         assertEquals(hashSetOf(SimpleTargetWithDefault()), actual)
     }
 
     @Test
-    fun `map list`() {
+    fun `map a list`() {
         val actual = listOf(SimpleSource("", "")).mapTo<SimpleTargetWithDefault>()
 
         assertEquals(listOf(SimpleTargetWithDefault()), actual)

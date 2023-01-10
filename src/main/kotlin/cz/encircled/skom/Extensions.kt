@@ -5,7 +5,7 @@ import java.util.function.Supplier
 
 object Extensions {
 
-    var mapper: SimpleKotlinObjectMapper = SimpleKotlinObjectMapper(MappingConfig())
+    var mapper: SimpleKotlinObjectMapper = SimpleKotlinObjectMapper { }
 
     inline fun <reified T : Any> List<Convertable>.mapTo(): List<T> {
         val klass = T::class

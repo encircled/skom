@@ -1,30 +1,82 @@
 package cz.encircled.skom
 
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KParameter
-import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.javaType
 
 typealias FromTo = Pair<KClass<*>, KClass<*>>
 typealias FromToJava = Pair<KClass<*>, Class<*>>
 
-open class SimpleKotlinObjectMapper(
-    val config: MappingConfig = MappingConfig()
-) {
+class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
-    constructor(init: MappingConfig.() -> Unit) : this(
-        MappingConfig()
-    ) {
+    internal val config: MappingConfig = MappingConfig()
+    internal val converter: Converter = Converter(config, this)
+
+    init {
         init(config)
     }
 
     // TODO when classTo is primitive
     fun <T : Any> mapTo(from: Any, classTo: KClass<T>): T {
         val fromTo = Pair(from::class, classTo)
+        val descriptor = getClassDescriptor(fromTo, classTo, from)
+
+        val sourceNameToValue: MutableMap<String, Any?> = getValuesFromSource(descriptor, fromTo, from)
+        sourceNameToValue.putAll(config.customMappers[fromTo]?.invoke(from) ?: mapOf())
+
+        val targetConstParams: MutableMap<KParameter, Any?> = buildArgsForConstructor(descriptor, sourceNameToValue)
+        val targetObject = descriptor.constructor.callBy(targetConstParams)
+
+        val postConstructValues = sourceNameToValue.filter {
+            !descriptor.targetConstructorParamNames.contains(it.key) &&
+                    descriptor.targetPropertiesByName.containsKey(it.key)
+        }
+
+        postConstructValues.forEach { (name, value) ->
+            val prop = descriptor.targetPropertiesByName[name]
+            if (prop is KMutableProperty<*>) {
+                prop.setter.call(targetObject, converter.convertValue(value, prop.returnType))
+            }
+        }
+
+        return targetObject as T
+    }
+
+    private fun buildArgsForConstructor(
+        descriptor: MappingDescriptor,
+        sourceNameToValue: MutableMap<String, Any?>
+    ): MutableMap<KParameter, Any?> {
+        val targetConstructorParams: MutableMap<KParameter, Any?> = HashMap(descriptor.constructor.parameters.size)
+        descriptor.constructor.parameters.forEach {
+            val isNotOptional = !it.isOptional
+
+            val value = converter.convertValue(sourceNameToValue[it.name], it.type)
+            if (value != null || (it.type.isMarkedNullable && isNotOptional)) {
+                targetConstructorParams[it] = value
+            } else if (isNotOptional) {
+                throw IllegalStateException("Mandatory constructor arg [${it.name}] is null!")
+            }
+        }
+        return targetConstructorParams
+    }
+
+    private fun <T : Any> getValuesFromSource(
+        descriptor: MappingDescriptor,
+        fromTo: Pair<KClass<out Any>, KClass<T>>,
+        from: Any
+    ): MutableMap<String, Any?> {
+        return descriptor.sourceProperties.associate {
+            val name = config.propertyAliases[fromTo]?.get(it.name) ?: it.name
+            name to it.call(from)
+        }.toMutableMap()
+    }
+
+    private fun <T : Any> getClassDescriptor(
+        fromTo: Pair<KClass<out Any>, KClass<T>>,
+        classTo: KClass<T>,
+        from: Any
+    ): MappingDescriptor {
         val descriptor = config.classToDescriptor.computeIfAbsent(fromTo) {
             MappingDescriptor(
                 classTo.constructors.first(),
@@ -32,87 +84,8 @@ open class SimpleKotlinObjectMapper(
                 classTo.memberProperties.filterIsInstance<KMutableProperty<*>>()
             )
         }
-
-        val sourceNameToValue: MutableMap<String, Any?> = HashMap(descriptor.sourceProperties.size)
-        descriptor.sourceProperties.forEach {
-            val name = config.propertyAliases[fromTo]?.get(it.name) ?: it.name
-            val value = it.call(from)
-            sourceNameToValue[name] = value
-        }
-
-        sourceNameToValue.putAll(config.customMappers[fromTo]?.invoke(from) ?: mapOf())
-        val targetConstructorParams: MutableMap<KParameter, Any?> = HashMap(descriptor.constructor.parameters.size)
-        descriptor.constructor.parameters.forEach {
-            val name = it.name
-            val isNotOptional = !it.isOptional
-
-            val value = convertValue(sourceNameToValue[name], it.type)
-            if (value != null || (it.type.isMarkedNullable && isNotOptional)) {
-                targetConstructorParams[it] = value
-            } else if (isNotOptional) {
-                throw IllegalStateException("Mandatory constructor arg [$name] is null!")
-            }
-        }
-        val target = descriptor.constructor.callBy(targetConstructorParams)
-
-        sourceNameToValue
-            .filter {
-                !descriptor.targetConstructorParamNames.contains(it.key) &&
-                        descriptor.targetPropertiesByName.containsKey(it.key)
-            }
-            .forEach { (name, value) ->
-                val prop = descriptor.targetPropertiesByName[name]
-                if (prop is KMutableProperty<*>) {
-                    prop.setter.call(target, convertValue(value, prop.returnType))
-                }
-            }
-
-        return target as T
+        return descriptor
     }
 
-    internal fun <T : Any> convertValue(value: T?, target: KType): Any? {
-        if (value == null) return null
-        val javaType = target.javaType
-        if (value::class.java == javaType) return value
-        return convertValue(value, javaType)
-    }
-
-    internal fun <T : Any> convertValue(value: T?, target: Type): Any? {
-        if (value == null || value::class.java == target) return value
-
-        return when (value) {
-            is Collection<*> -> {
-                val type = (target as ParameterizedType).actualTypeArguments[0]
-                value.map { v -> convertValue(v, type) }
-            }
-            is Convertable -> {
-                mapTo(value, (target as Class<*>).kotlin)
-            }
-            is Map<*, *> -> {
-                val keyType = (target as ParameterizedType).actualTypeArguments[0]
-                val valueType = target.actualTypeArguments[1]
-
-                value.mapKeys { convertValue(it.key, keyType) }
-                    .mapValues { convertValue(it.value, valueType) }
-            }
-            else -> {
-                if (target is Class<*>) {
-                    val plainConverter = config.directConverters[value::class to target]
-                    when {
-                        plainConverter != null -> plainConverter.invoke(value)
-                        value is Enum<*> && target.isEnum -> java.lang.Enum.valueOf(
-                            target as Class<out Enum<*>>,
-                            value.name
-                        )
-                        target == String::class.java -> value.toString()
-                        else -> value
-                    }
-                } else {
-                    // TODO support generic types as well
-                    value
-                }
-            }
-        }
-    }
 
 }
