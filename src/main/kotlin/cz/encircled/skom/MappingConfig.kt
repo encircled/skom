@@ -7,7 +7,7 @@ class MappingConfig(
     addBasicConverters: Boolean = true
 ) {
 
-    internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor> = mutableMapOf()
+    internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor<*>> = mutableMapOf()
     internal val enumMappers: MutableMap<FromToJava, MutableMap<Any, Any>> = mutableMapOf()
     internal val customMappers: MutableMap<FromTo, (Any) -> Map<String, Any?>> = mutableMapOf()
     internal val propertyAliases: MutableMap<FromTo, MutableMap<String, String>> = mutableMapOf()

@@ -16,8 +16,15 @@ class MappingConfigTest {
             }
         }
 
+
         assertEquals(1, mapper.config.propertyAliases.size)
         assertEquals(1, mapper.config.customMappers.size)
+
+        mapper.config().forClasses(SimpleSource::class, SimpleTarget::class) {
+            addPropertyAlias("2", "3")
+        }
+
+        assertEquals(1, mapper.config.propertyAliases.size)
     }
 
 }

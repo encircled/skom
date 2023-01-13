@@ -20,7 +20,7 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     // TODO when classTo is primitive
     fun <T : Any> mapTo(from: Any, classTo: KClass<T>): T {
         val fromTo = Pair(from::class, classTo)
-        val descriptor = getClassDescriptor(fromTo, classTo, from)
+        val descriptor = getClassDescriptor<T>(fromTo, from)
 
         val sourceNameToValue: MutableMap<String, Any?> = getValuesFromSource(descriptor, fromTo, from)
         sourceNameToValue.putAll(config.customMappers[fromTo]?.invoke(from) ?: mapOf())
@@ -40,11 +40,13 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
             }
         }
 
-        return targetObject as T
+        return targetObject
     }
 
-    private fun buildArgsForConstructor(
-        descriptor: MappingDescriptor,
+    fun config() = config
+
+    private fun <T> buildArgsForConstructor(
+        descriptor: MappingDescriptor<T>,
         sourceNameToValue: MutableMap<String, Any?>
     ): MutableMap<KParameter, Any?> {
         val targetConstructorParams: MutableMap<KParameter, Any?> = HashMap(descriptor.constructor.parameters.size)
@@ -62,7 +64,7 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     }
 
     private fun <T : Any> getValuesFromSource(
-        descriptor: MappingDescriptor,
+        descriptor: MappingDescriptor<T>,
         fromTo: Pair<KClass<out Any>, KClass<T>>,
         from: Any
     ): MutableMap<String, Any?> {
@@ -72,20 +74,15 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         }.toMutableMap()
     }
 
-    private fun <T : Any> getClassDescriptor(
-        fromTo: Pair<KClass<out Any>, KClass<T>>,
-        classTo: KClass<T>,
-        from: Any
-    ): MappingDescriptor {
+    private fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {
         val descriptor = config.classToDescriptor.computeIfAbsent(fromTo) {
             MappingDescriptor(
-                classTo.constructors.first(),
+                fromTo.second.constructors.first(),
                 from::class.memberProperties,
-                classTo.memberProperties.filterIsInstance<KMutableProperty<*>>()
+                fromTo.second.memberProperties.filterIsInstance<KMutableProperty<*>>()
             )
         }
-        return descriptor
+        return descriptor as MappingDescriptor<T>
     }
-
 
 }

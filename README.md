@@ -122,6 +122,45 @@ SimpleKotlinObjectMapper {
 }
 ```
 
+## Complex configuration
+
+Configuration of multiple entities might be set during SKOM creation
+
+```kotlin
+SimpleKotlinObjectMapper {
+    forClasses(A::class, B::class) {
+        // ...
+    }
+
+    forClasses(C::class, D::class) {
+        // ...
+    }
+
+    forClasses(E::class, F::class) {
+        // ...
+    }
+}
+```
+
+or could be split like:
+
+```kotlin
+val mapper = SimpleKotlinObjectMapper { }
+val config = mapper.config()
+
+config.forClasses(A::class, B::class) {
+    // ...
+}
+
+config.forClasses(C::class, D::class) {
+    // ...
+}
+
+config.forClasses(E::class, F::class) {
+    // ...
+}
+```
+
 ## Performance
 
 Reflection-based implementation is not very fast, approx 150 ops/ms for complex objects, thus it is not recommended for
