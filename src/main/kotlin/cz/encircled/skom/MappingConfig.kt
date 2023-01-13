@@ -1,13 +1,14 @@
 package cz.encircled.skom
 
 import java.math.BigDecimal
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
 class MappingConfig(
     addBasicConverters: Boolean = true
 ) {
 
-    internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor<*>> = mutableMapOf()
+    internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor<*>> = ConcurrentHashMap()
     internal val enumMappers: MutableMap<FromToJava, MutableMap<Any, Any>> = mutableMapOf()
     internal val customMappers: MutableMap<FromTo, (Any) -> Map<String, Any?>> = mutableMapOf()
     internal val propertyAliases: MutableMap<FromTo, MutableMap<String, String>> = mutableMapOf()
