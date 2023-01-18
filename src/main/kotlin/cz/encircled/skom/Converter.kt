@@ -23,10 +23,7 @@ internal class Converter(
         return when (value) {
             // TODO when target is parametrized
             is Convertable -> mapper.mapTo(value, (targetType as Class<*>).kotlin)
-            is Collection<*> -> {
-                val type = target.typeArgument(0)
-                value.map { v -> convertValue(v, type) }
-            }
+            is Collection<*> -> convertCollection(target, value)
             is Map<*, *> -> convertMap(target, value)
             else -> convertSingularObject(target, value)
         }
@@ -44,6 +41,15 @@ internal class Converter(
         } else {
             // TODO support generic types as well
             value
+        }
+    }
+
+    private fun convertCollection(target: TypeWrapper, value: Collection<*>): Collection<Any?> {
+        val type = target.typeArgument(0)
+        val listResult = value.map { v -> convertValue(v, type) }
+        return when (target.rawClass()) {
+            Set::class.java -> listResult.toMutableSet()
+            else -> listResult.toMutableList()
         }
     }
 

@@ -68,10 +68,19 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         fromTo: Pair<KClass<out Any>, KClass<T>>,
         from: Any
     ): MutableMap<String, Any?> {
-        return descriptor.sourceProperties.associate {
-            val name = config.propertyAliases[fromTo]?.get(it.name) ?: it.name
-            name to it.call(from)
-        }.toMutableMap()
+        val result = mutableMapOf<String, Any?>()
+
+        descriptor.sourceProperties.forEach {
+            val value = it.call(from)
+            val name = it.name
+
+            result[name] = value
+            config.aliasesForProperty(fromTo, name).forEach { alias ->
+                result[alias] = value
+            }
+        }
+
+        return result
     }
 
     private fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {

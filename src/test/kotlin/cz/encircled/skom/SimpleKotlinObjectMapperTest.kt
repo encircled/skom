@@ -10,8 +10,19 @@ class SimpleKotlinObjectMapperTest {
 
     @Test
     fun `map complex object`() {
-        val mapped = Source().mapTo<TargetEntity>()
+        val mapper = SimpleKotlinObjectMapper {
+            forClasses(Source::class, TargetEntity::class) {
+                // Test multiple aliases
+                addPropertyAlias("collectionOfConvertable", "setOfConvertable")
+                addPropertyAlias("collectionOfConvertable", "mutableListOfConvertable")
+            }
+        }
 
+        val mapped = mapper.mapTo(Source(), TargetEntity::class)
+
+        val nestedTarget1 = NestedTarget("nestedName", null, listOf())
+
+        val nestedTarget2 = NestedTarget("nestedName2", null, listOf())
         val expected = TargetEntity(
             "name",
             1,
@@ -19,13 +30,15 @@ class SimpleKotlinObjectMapperTest {
             listOf("1", "2"),
             mapOf("1" to 1, "2" to 2),
             mapOf(
-                "1" to NestedTarget("nestedName", null, listOf()), "2" to NestedTarget(
+                "1" to nestedTarget1, "2" to NestedTarget(
                     "nestedName2",
                     NestedTarget("nestedName3", null, listOf()),
                     listOf(NestedTarget("nestedName4", null, listOf()), NestedTarget("nestedName5", null, listOf()))
                 )
             ),
-            listOf(NestedTarget("nestedName", null, listOf()), NestedTarget("nestedName2", null, listOf())),
+            listOf(nestedTarget1, nestedTarget2),
+            setOf(nestedTarget1, nestedTarget2),
+            mutableListOf(nestedTarget1, nestedTarget2),
             null
         )
         assertEquals(expected, mapped)

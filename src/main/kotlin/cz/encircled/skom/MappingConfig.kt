@@ -11,7 +11,7 @@ class MappingConfig(
     internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor<*>> = ConcurrentHashMap()
     internal val enumMappers: MutableMap<FromToJava, MutableMap<Any, Any>> = mutableMapOf()
     internal val customMappers: MutableMap<FromTo, (Any) -> Map<String, Any?>> = mutableMapOf()
-    internal val propertyAliases: MutableMap<FromTo, MutableMap<String, String>> = mutableMapOf()
+    private val propertyAliases: MutableMap<FromTo, MutableMap<String, MutableSet<String>>> = mutableMapOf()
     internal val directConverters: MutableMap<FromToJava, (Any) -> Any> = mutableMapOf()
 
     init {
@@ -81,8 +81,9 @@ class MappingConfig(
         targetName: String
     ) {
         val fromTo = from to to
-        val aliases = propertyAliases.computeIfAbsent(fromTo) { hashMapOf() }
-        aliases[sourceName] = targetName
+        val aliasesForPair = propertyAliases.computeIfAbsent(fromTo) { hashMapOf() }
+        aliasesForPair.computeIfAbsent(sourceName) { mutableSetOf() }
+        aliasesForPair.getValue(sourceName).add(targetName)
     }
 
     internal fun directConverter(value: Any, target: TypeWrapper): ((Any) -> Any)? {
@@ -91,6 +92,10 @@ class MappingConfig(
 
     internal fun enumMapper(value: Any, target: TypeWrapper): MutableMap<Any, Any>? {
         return enumMappers[value::class to target.type]
+    }
+
+    internal fun aliasesForProperty(fromTo: FromTo, propertyName: String): Set<String> {
+        return propertyAliases[fromTo]?.get(propertyName) ?: setOf()
     }
 
     class MappingConfigBuilder<F : Any, T : Any>(
@@ -103,8 +108,10 @@ class MappingConfig(
             return this
         }
 
-        fun addPropertyAlias(sourceName: String, targetName: String): MappingConfigBuilder<F, T> {
-            config.addPropertyAlias(from, to, sourceName, targetName)
+        fun addPropertyAlias(sourceName: String, vararg targetNames: String): MappingConfigBuilder<F, T> {
+            targetNames.forEach {
+                config.addPropertyAlias(from, to, sourceName, it)
+            }
             return this
         }
 

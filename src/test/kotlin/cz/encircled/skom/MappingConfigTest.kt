@@ -9,22 +9,23 @@ class MappingConfigTest {
     fun testBuilder() {
         val mapper = SimpleKotlinObjectMapper {
             forClasses(SimpleSource::class, SimpleTarget::class) {
-                addPropertyAlias("1", "2")
+                addPropertyAlias("1", "2", "3")
                 addPropertyMappings {
                     mapOf()
                 }
             }
         }
 
+        val fromTo = SimpleSource::class to SimpleTarget::class
 
-        assertEquals(1, mapper.config.propertyAliases.size)
+        assertEquals(setOf("2", "3"), mapper.config.aliasesForProperty(fromTo, "1"))
         assertEquals(1, mapper.config.customMappers.size)
 
         mapper.config().forClasses(SimpleSource::class, SimpleTarget::class) {
             addPropertyAlias("2", "3")
         }
 
-        assertEquals(1, mapper.config.propertyAliases.size)
+        assertEquals(setOf("3"), mapper.config.aliasesForProperty(fromTo, "2"))
     }
 
 }

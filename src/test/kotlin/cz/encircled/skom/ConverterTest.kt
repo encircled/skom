@@ -2,9 +2,11 @@ package cz.encircled.skom
 
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
+import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ConverterTest {
 
@@ -57,6 +59,18 @@ class ConverterTest {
         assertThrows<IllegalArgumentException> {
             converter.convertValue(EnumFrom.TWO, EnumTo::class.createType())
         }
+    }
+
+    @Test
+    fun `convert list to set`() {
+        val arguments = KTypeProjection.invariant(String::class.createType())
+        val setType = Set::class.createType(listOf(arguments))
+        val mutSetType = MutableSet::class.createType(listOf(arguments))
+        assertEquals(setOf("1"), converter.convertValue(listOf("1"), setType))
+
+        val actualMutable = converter.convertValue(listOf("1"), mutSetType)
+        assertEquals(mutableSetOf("1"), actualMutable)
+        assertTrue((actualMutable as MutableSet<String>).add("2"))
     }
 
     enum class EnumFrom {

@@ -38,6 +38,8 @@ data class TargetEntity(
     val map: Map<String, Int>,
     val mapOfConvertable: Map<String, NestedTarget>,
     val collectionOfConvertable: List<NestedTarget>,
+    val setOfConvertable: Set<NestedTarget>,
+    val mutableListOfConvertable: MutableList<NestedTarget>,
     val nullableName: String?,
     val optionalName: String = "optional",
     val optionalNullableName: String? = "optionalNullable",

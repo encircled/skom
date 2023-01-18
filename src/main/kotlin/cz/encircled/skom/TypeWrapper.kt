@@ -13,6 +13,11 @@ class TypeWrapper(val type: Type) {
         return (type as ParameterizedType).actualTypeArguments[i]
     }
 
+    fun rawClass(): Class<*> {
+        val resultType = if (isParametrized()) (type as ParameterizedType).rawType else type
+        return resultType as Class<*>
+    }
+
     fun isEnum(): Boolean {
         return if (isParametrized()) false
         else (type as Class<*>).isEnum
