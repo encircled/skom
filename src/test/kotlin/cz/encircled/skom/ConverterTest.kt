@@ -27,23 +27,28 @@ class ConverterTest {
         val longType = Long::class.createType()
         assertEquals(12L, converter.convertValue(12, longType))
         assertEquals(12L, converter.convertValue(12f, longType))
+        assertEquals(12L, converter.convertValue(12.0, longType))
         assertEquals(12L, converter.convertValue(BigDecimal(12), longType))
         assertEquals(12L, converter.convertValue("12", longType))
 
         val floatType = Float::class.createType()
         assertEquals(12f, converter.convertValue(12, floatType))
+        assertEquals(12f, converter.convertValue(12.0, floatType))
         assertEquals(12f, converter.convertValue(BigDecimal(12), floatType))
         assertEquals(12f, converter.convertValue("12", floatType))
 
         val intType = Int::class.createType()
         assertEquals(12, converter.convertValue(12f, intType))
         assertEquals(12, converter.convertValue(12L, intType))
+        assertEquals(12, converter.convertValue(12.0, intType))
         assertEquals(12, converter.convertValue(BigDecimal(12), intType))
         assertEquals(12, converter.convertValue("12", intType))
 
         val bigDecimalType = BigDecimal::class.createType()
         assertEquals(BigDecimal(12), converter.convertValue("12", bigDecimalType))
         assertEquals(BigDecimal(12), converter.convertValue(12, bigDecimalType))
+        assertEquals(BigDecimal(12.0).setScale(1), converter.convertValue(12.0, bigDecimalType))
+        assertEquals(BigDecimal(12.0).setScale(1), converter.convertValue(12f, bigDecimalType))
     }
 
     @Test

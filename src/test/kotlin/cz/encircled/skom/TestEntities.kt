@@ -1,5 +1,7 @@
 package cz.encircled.skom
 
+import java.math.BigDecimal
+
 data class NestedSource(
     val name: String = "nestedName",
     val nested: NestedSource? = null,
@@ -8,7 +10,7 @@ data class NestedSource(
 
 data class Source(
     val name: String = "name",
-    val number: Int = 1,
+    val number: BigDecimal = BigDecimal.ONE,
     val bool: Boolean = true,
     val collection: List<String> = listOf("1", "2"),
     val map: Map<String, Int> = mapOf("1" to 1, "2" to 2),
@@ -43,7 +45,10 @@ data class TargetEntity(
     val nullableName: String?,
     val optionalName: String = "optional",
     val optionalNullableName: String? = "optionalNullable",
-)
+) {
+    var bodyNumber: Int? = null
+    var bodyMapOfConvertable: Map<String, NestedTarget>? = null
+}
 
 data class SimpleSource(
     val name: String,

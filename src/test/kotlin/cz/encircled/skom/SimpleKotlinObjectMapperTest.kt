@@ -15,6 +15,8 @@ class SimpleKotlinObjectMapperTest {
                 // Test multiple aliases
                 addPropertyAlias("collectionOfConvertable", "setOfConvertable")
                 addPropertyAlias("collectionOfConvertable", "mutableListOfConvertable")
+                addPropertyAlias("number", "number", "bodyNumber")
+                addPropertyAlias("mapOfConvertable", "mapOfConvertable", "bodyMapOfConvertable")
             }
         }
 
@@ -42,6 +44,15 @@ class SimpleKotlinObjectMapperTest {
             null
         )
         assertEquals(expected, mapped)
+
+        assertEquals(1, mapped.bodyNumber)
+        assertEquals(mapOf(
+            "1" to nestedTarget1, "2" to NestedTarget(
+                "nestedName2",
+                NestedTarget("nestedName3", null, listOf()),
+                listOf(NestedTarget("nestedName4", null, listOf()), NestedTarget("nestedName5", null, listOf()))
+            )
+        ), mapped.bodyMapOfConvertable)
     }
 
     @Test
