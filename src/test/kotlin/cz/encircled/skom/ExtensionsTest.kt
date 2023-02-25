@@ -21,17 +21,30 @@ class ExtensionsTest {
     }
 
     @Test
+    fun `map single object`() {
+        val actual = SimpleSource("", "").mapTo<SimpleTargetWithDefault>()
+        val actual2 = SimpleSource("", "").mapTo(SimpleTargetWithDefault::class)
+
+        assertEquals(SimpleTargetWithDefault(), actual)
+        assertEquals(SimpleTargetWithDefault(), actual2)
+    }
+
+    @Test
     fun `map a set`() {
         val actual = setOf(SimpleSource("", "")).mapTo<SimpleTargetWithDefault>()
+        val actual2 = setOf(SimpleSource("", "")).mapTo(SimpleTargetWithDefault::class)
 
         assertEquals(hashSetOf(SimpleTargetWithDefault()), actual)
+        assertEquals(hashSetOf(SimpleTargetWithDefault()), actual2)
     }
 
     @Test
     fun `map a list`() {
         val actual = listOf(SimpleSource("", "")).mapTo<SimpleTargetWithDefault>()
+        val actual2 = listOf(SimpleSource("", "")).mapTo(SimpleTargetWithDefault::class)
 
         assertEquals(listOf(SimpleTargetWithDefault()), actual)
+        assertEquals(listOf(SimpleTargetWithDefault()), actual2)
     }
 
 }

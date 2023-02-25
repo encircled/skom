@@ -2,6 +2,7 @@ package cz.encircled.skom
 
 import java.util.*
 import java.util.function.Supplier
+import kotlin.reflect.KClass
 
 object Extensions {
 
@@ -12,6 +13,10 @@ object Extensions {
         return map { mapper.mapTo(it, klass) }
     }
 
+    fun <T : Any> List<Convertable>.mapTo(klass : KClass<T>): List<T> {
+        return map { mapper.mapTo(it, klass) }
+    }
+
     inline fun <reified T : Any> Set<Convertable>.mapTo(): Set<T> {
         val klass = T::class
         val result = HashSet<T>(size)
@@ -19,8 +24,18 @@ object Extensions {
         return result
     }
 
+    fun <T : Any> Set<Convertable>.mapTo(klass : KClass<T>): Set<T> {
+        val result = HashSet<T>(size)
+        forEach { result.add(mapper.mapTo(it, klass)) }
+        return result
+    }
+
     inline fun <reified T : Any> Convertable.mapTo(): T {
         return mapper.mapTo(this, T::class)
+    }
+
+    fun <T : Any> Convertable.mapTo(klass : KClass<T>): T {
+        return mapper.mapTo(this, klass)
     }
 
     inline fun <reified T : Any> Optional<Convertable>.mapToNullable(): T? {
