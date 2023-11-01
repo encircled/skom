@@ -1,9 +1,9 @@
 package cz.encircled.skom
 
 import cz.encircled.skom.Extensions.mapTo
-import org.junit.jupiter.api.Disabled
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class SimpleKotlinObjectMapperTest {
@@ -46,13 +46,15 @@ class SimpleKotlinObjectMapperTest {
         assertEquals(expected, mapped)
 
         assertEquals(1, mapped.bodyNumber)
-        assertEquals(mapOf(
-            "1" to nestedTarget1, "2" to NestedTarget(
-                "nestedName2",
-                NestedTarget("nestedName3", null, listOf()),
-                listOf(NestedTarget("nestedName4", null, listOf()), NestedTarget("nestedName5", null, listOf()))
-            )
-        ), mapped.bodyMapOfConvertable)
+        assertEquals(
+            mapOf(
+                "1" to nestedTarget1, "2" to NestedTarget(
+                    "nestedName2",
+                    NestedTarget("nestedName3", null, listOf()),
+                    listOf(NestedTarget("nestedName4", null, listOf()), NestedTarget("nestedName5", null, listOf()))
+                )
+            ), mapped.bodyMapOfConvertable
+        )
     }
 
     @Test
@@ -105,13 +107,53 @@ class SimpleKotlinObjectMapperTest {
     }
 
     @Test
-    @Disabled
-    fun perf() {
-        val map = (1..3000).map { Source() }
-        map.map { it.mapTo<TargetEntity>() }
-        val start = System.currentTimeMillis()
-        map.map { it.mapTo<TargetEntity>() }
-        println(System.currentTimeMillis() - start)
+    fun `map from java via getter`() {
+        val source = JavaTestEntity()
+        source.name = "name"
+        source.another = "another"
+
+        val actual = source.mapTo<SimpleTarget>()
+        assertEquals(source.name, actual.name)
+        assertEquals(source.another, actual.another)
+    }
+
+    @Test
+    fun `map to java via setter`() {
+        val source = SimpleSource("name", "another")
+
+        val mapper = SimpleKotlinObjectMapper {
+            forClasses(SimpleSource::class, JavaTestEntity::class) {
+                addPropertyAlias("anotherName", "another")
+                addPropertyMappings {
+                    mapOf("boolean" to true)
+                }
+            }
+            addPropertyAlias(SimpleSource::class, JavaTestEntity::class, "anotherName", "another")
+
+        }
+
+        val actual = mapper.mapTo(source, JavaTestEntity::class)
+        assertTrue(actual.boolean)
+        assertEquals(source.name, actual.name)
+        assertEquals(source.anotherName, actual.another)
+    }
+
+    @Test
+    fun `java class descriptor with getter and setter`() {
+        val mapper = SimpleKotlinObjectMapper {
+        }
+        val descriptor = mapper.getClassDescriptor<SimpleSource>(
+            FromTo(JavaTestEntity::class, JavaTestEntity::class),
+            JavaTestEntity()
+        )
+        assertEquals(
+            listOf("another", "boolean", "name"),
+            descriptor.targetPropertiesByName.map { it.key }.sorted()
+        )
+        assertEquals(
+            listOf("another", "boolean", "name"),
+            descriptor.sourceProperties.map { mapper.getFieldName(it.name) }.sorted()
+        )
     }
 
 }

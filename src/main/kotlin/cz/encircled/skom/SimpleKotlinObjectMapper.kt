@@ -1,9 +1,11 @@
 package cz.encircled.skom
 
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KParameter
-import kotlin.reflect.full.memberProperties
+import kotlin.reflect.KVisibility.PUBLIC
+import kotlin.reflect.full.declaredMembers
 
 typealias FromTo = Pair<KClass<*>, KClass<*>>
 typealias FromToJava = Pair<KClass<*>, Class<*>>
@@ -29,14 +31,15 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         val targetObject = descriptor.constructor.callBy(targetConstParams)
 
         val postConstructValues = sourceNameToValue.filter {
-            !descriptor.targetConstructorParamNames.contains(it.key) &&
-                    descriptor.targetPropertiesByName.containsKey(it.key)
+            !descriptor.targetConstructorParamNames.contains(it.key) && descriptor.targetPropertiesByName.containsKey(it.key)
         }
 
         postConstructValues.forEach { (name, value) ->
             val prop = descriptor.targetPropertiesByName[name]
             if (prop is KMutableProperty<*>) {
                 prop.setter.call(targetObject, converter.convertValue(value, prop.returnType))
+            } else if (prop is KFunction<*>) {
+                prop.call(targetObject, converter.convertValue(value, prop.returnType))
             }
         }
 
@@ -46,17 +49,16 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     fun config() = config
 
     private fun <T> buildArgsForConstructor(
-        descriptor: MappingDescriptor<T>,
-        sourceNameToValue: MutableMap<String, Any?>
+        descriptor: MappingDescriptor<T>, sourceNameToValue: MutableMap<String, Any?>
     ): MutableMap<KParameter, Any?> {
         val targetConstructorParams: MutableMap<KParameter, Any?> = HashMap(descriptor.constructor.parameters.size)
         descriptor.constructor.parameters.forEach {
-            val isNotOptional = !it.isOptional
+            val hasNoDefaultValue = !it.isOptional
 
             val value = converter.convertValue(sourceNameToValue[it.name], it.type)
-            if (value != null || (it.type.isMarkedNullable && isNotOptional)) {
+            if (value != null || (it.type.isMarkedNullable && hasNoDefaultValue)) {
                 targetConstructorParams[it] = value
-            } else if (isNotOptional) {
+            } else if (hasNoDefaultValue) {
                 throw IllegalStateException("Mandatory constructor arg [${it.name}] is null!")
             }
         }
@@ -64,15 +66,13 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     }
 
     private fun <T : Any> getValuesFromSource(
-        descriptor: MappingDescriptor<T>,
-        fromTo: Pair<KClass<out Any>, KClass<T>>,
-        from: Any
+        descriptor: MappingDescriptor<T>, fromTo: Pair<KClass<out Any>, KClass<T>>, from: Any
     ): MutableMap<String, Any?> {
         val result = mutableMapOf<String, Any?>()
 
         descriptor.sourceProperties.forEach {
             val value = it.call(from)
-            val name = it.name
+            val name = getFieldName(it.name)
 
             result[name] = value
             config.aliasesForProperty(fromTo, name).forEach { alias ->
@@ -83,15 +83,42 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         return result
     }
 
-    private fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {
+    internal fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {
         val descriptor = config.classToDescriptor.computeIfAbsent(fromTo) {
-            MappingDescriptor(
-                fromTo.second.constructors.first(),
-                from::class.memberProperties,
-                fromTo.second.memberProperties.filterIsInstance<KMutableProperty<*>>()
-            )
+            val targetProperties = fromTo.second.declaredMembers.filter {
+                it.visibility == PUBLIC && (it is KMutableProperty<*> || (it is KFunction && it.name.isSetter()))
+            }
+
+            val sourceProperties = from::class.declaredMembers.filter {
+                it.visibility == PUBLIC && (it !is KFunction || it.name.isGetter())
+            }
+
+            MappingDescriptor(fromTo.second.constructors.first(),
+                sourceProperties,
+                targetProperties,
+                targetProperties.associateBy { getFieldName(it.name) })
         }
+
         return descriptor as MappingDescriptor<T>
     }
+
+    /**
+     * Get real field from getter/setter
+     */
+    internal fun getFieldName(accessorName: String): String {
+        return if (accessorName.isBooleanGetter()) {
+            accessorName.substring(2).replaceFirstChar { it.lowercaseChar() }
+        } else if (accessorName.isGetter() || accessorName.isSetter()) {
+            accessorName.substring(3).replaceFirstChar { it.lowercaseChar() }
+        } else {
+            accessorName
+        }
+    }
+
+    private fun String.isBooleanGetter(): Boolean = startsWith("is") && get(2).isUpperCase()
+
+    private fun String.isGetter(): Boolean = startsWith("get") && get(3).isUpperCase() || isBooleanGetter()
+
+    private fun String.isSetter(): Boolean = startsWith("set") && get(3).isUpperCase()
 
 }

@@ -1,13 +1,13 @@
 package cz.encircled.skom
 
+import kotlin.reflect.KCallable
 import kotlin.reflect.KFunction
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty1
 
 internal data class MappingDescriptor<T>(
     val constructor: KFunction<T>,
-    val sourceProperties: Collection<KProperty1<*, *>>,
-    val targetProperties: Collection<KMutableProperty<*>>,
-    val targetPropertiesByName: Map<String, KMutableProperty<*>> = targetProperties.associateBy { it.name },
+    val sourceProperties: Collection<KCallable<*>>,
+    val targetProperties: Collection<KCallable<*>>,
+
+    val targetPropertiesByName: Map<String, KCallable<*>>,
     val targetConstructorParamNames: List<String> = constructor.parameters.mapNotNull { it.name }
 )

@@ -36,7 +36,7 @@ internal class Converter(
                 directConverter != null -> directConverter.invoke(value)
                 value is Enum<*> && target.isEnum() -> convertEnum(target, value)
                 target.type == String::class.java -> value.toString()
-                else -> value
+                else -> value // TODO check type and throw?
             }
         } else {
             // TODO support generic types as well
