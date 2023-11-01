@@ -4,7 +4,7 @@
 
     <artifactId>skom</artifactId>
     <groupId>cz.encircled</groupId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.7</version>
     <packaging>jar</packaging>
 
     <name>skom</name>
@@ -14,7 +14,7 @@
     <scm>
         <connection>scm:git:git@github.com:encircled/skom.git</connection>
         <url>https://github.com/encircled/skom/</url>
-        <tag>HEAD</tag>
+        <tag>skom-1.7</tag>
     </scm>
 
     <licenses>
