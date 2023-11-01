@@ -22,6 +22,14 @@ val mapped: To = From(1, "John").mapTo()
 assertEquals(To(1, "John"), mapped)
 ```
 
+```xml
+<dependency>
+    <groupId>cz.encircled</groupId>
+    <artifactId>skom</artifactId>
+    <version>1.7</version>
+</dependency>
+```
+
 ## Setup
 
 SKOM offers extension functions for objects implementing `cz.encircled.skom.Convertable` interface:
