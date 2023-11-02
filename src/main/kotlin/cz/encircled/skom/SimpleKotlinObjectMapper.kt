@@ -2,7 +2,6 @@ package cz.encircled.skom
 
 import kotlin.reflect.*
 import kotlin.reflect.KVisibility.PUBLIC
-import kotlin.reflect.full.declaredMembers
 
 typealias FromTo = Pair<KClass<*>, KClass<*>>
 typealias FromToJava = Pair<KClass<*>, Class<*>>
@@ -81,11 +80,11 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
     internal fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {
         val descriptor = config.classToDescriptor.computeIfAbsent(fromTo) {
-            val targetProperties = fromTo.second.declaredMembers.filter {
+            val targetProperties = fromTo.second.members.filter {
                 it.visibility == PUBLIC && (it is KMutableProperty<*> || (it is KFunction && it.name.isSetter()))
             }
 
-            val sourceProperties = from::class.declaredMembers.filter {
+            val sourceProperties = from::class.members.filter {
                 it.visibility == PUBLIC && (it !is KFunction || it.name.isGetter())
             }
 
