@@ -65,3 +65,10 @@ data class SimpleTarget(
 data class SimpleTargetWithDefault(
     val defaultName: String = "def",
 )
+
+data class EntityFieldsAsGetter(
+    val isBoolean: Boolean,
+    val setName: String,
+) : Convertable {
+    var getName: String = ""
+}

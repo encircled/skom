@@ -1,9 +1,6 @@
 package cz.encircled.skom
 
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KParameter
+import kotlin.reflect.*
 import kotlin.reflect.KVisibility.PUBLIC
 import kotlin.reflect.full.declaredMembers
 
@@ -72,8 +69,7 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
         descriptor.sourceProperties.forEach {
             val value = it.call(from)
-            val name = getFieldName(it.name)
-
+            val name = if (it is KFunction<*>) getFieldName(it) else it.name
             result[name] = value
             config.aliasesForProperty(fromTo, name).forEach { alias ->
                 result[alias] = value
@@ -96,7 +92,9 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
             MappingDescriptor(fromTo.second.constructors.first(),
                 sourceProperties,
                 targetProperties,
-                targetProperties.associateBy { getFieldName(it.name) })
+                targetProperties.associateBy {
+                    getFieldName(it)
+                })
         }
 
         return descriptor as MappingDescriptor<T>
@@ -105,14 +103,18 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     /**
      * Get real field from getter/setter
      */
-    internal fun getFieldName(accessorName: String): String {
-        return if (accessorName.isBooleanGetter()) {
-            accessorName.substring(2).replaceFirstChar { it.lowercaseChar() }
-        } else if (accessorName.isGetter() || accessorName.isSetter()) {
-            accessorName.substring(3).replaceFirstChar { it.lowercaseChar() }
-        } else {
-            accessorName
+    internal fun getFieldName(callable: KCallable<*>): String {
+        val name = callable.name
+        return when {
+            callable !is KFunction -> name
+            name.isBooleanGetter() -> name.uncapitalize(2)
+            name.isGetter() || name.isSetter()  -> name.uncapitalize(3)
+            else -> name
         }
+    }
+
+    private fun String.uncapitalize(from: Int) : String {
+        return substring(from).replaceFirstChar { it.lowercaseChar() }
     }
 
     private fun String.isBooleanGetter(): Boolean = startsWith("is") && get(2).isUpperCase()

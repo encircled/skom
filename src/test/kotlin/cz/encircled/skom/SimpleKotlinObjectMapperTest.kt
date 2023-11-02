@@ -152,8 +152,18 @@ class SimpleKotlinObjectMapperTest {
         )
         assertEquals(
             listOf("another", "boolean", "name"),
-            descriptor.sourceProperties.map { mapper.getFieldName(it.name) }.sorted()
+            descriptor.sourceProperties.map { mapper.getFieldName(it) }.sorted()
         )
+    }
+
+    @Test
+    fun `field names as getter`() {
+        val source = EntityFieldsAsGetter(true, "1")
+        source.getName = "2"
+        val actual = source.mapTo<EntityFieldsAsGetter>()
+
+        assertEquals(source, actual)
+        assertEquals(source.getName, actual.getName)
     }
 
 }
