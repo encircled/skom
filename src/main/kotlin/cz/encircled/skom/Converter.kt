@@ -26,6 +26,11 @@ internal class Converter(
         if (value == null || value::class.java == targetType) return value
         val target = TypeWrapper(targetType)
 
+        // Check for kotlin vs java primitive classes, like kotlin.Long == java.lang.Long
+        if (value::class == target.rawClass().kotlin) {
+            return value
+        }
+
         return when (value) {
             // TODO when target is parametrized
             is Convertable -> mapper.mapTo(value, (targetType as Class<*>).kotlin)
@@ -42,7 +47,18 @@ internal class Converter(
                 directConverter != null -> directConverter.invoke(value)
                 value is Enum<*> && target.isEnum() -> convertEnum(target, value)
                 target.type == String::class.java -> value.toString()
-                else -> throw IllegalStateException("No converter provided for mapping ${value::class} to ${target.type}")
+                else -> {
+                    val javaClass = value.javaClass
+                    val rawClass = target.rawClass()
+                    val assignableFrom = javaClass.isAssignableFrom(rawClass)
+                    val assignableFrom2 = rawClass.isAssignableFrom(javaClass)
+                    val b = javaClass == target.rawClass()
+                    val b2 = javaClass.equals(target.rawClass())
+                    val b1 = rawClass.kotlin == value::class
+                    if (assignableFrom) {
+                        value
+                    } else throw IllegalStateException("No converter provided for mapping ${value::class} to ${target.type}")
+                }
             }
         } else {
             // TODO support generic types as well

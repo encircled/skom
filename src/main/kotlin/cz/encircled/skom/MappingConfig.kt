@@ -25,9 +25,6 @@ class MappingConfig(
             addNumberConverters()
             addStringToNumberConverters()
 
-            addConverter(Boolean::class, java.lang.Boolean.TYPE.kotlin) {
-                if (it) java.lang.Boolean.TRUE else java.lang.Boolean.FALSE
-            }
             addConverter(Short::class, Boolean::class) { it == 1.toShort() }
         }
     }

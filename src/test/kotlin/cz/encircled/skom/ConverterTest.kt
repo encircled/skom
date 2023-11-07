@@ -78,6 +78,15 @@ class ConverterTest {
         assertTrue((actualMutable as MutableSet<String>).add("2"))
     }
 
+    @Test
+    fun `convert java primitives`() {
+        assertEquals(1L, converter.convertValue(1L, java.lang.Long.TYPE))
+        assertEquals(1f, converter.convertValue(1f, java.lang.Float.TYPE))
+        assertEquals(true, converter.convertValue(true, java.lang.Boolean.TYPE))
+
+        assertEquals(1f, converter.convertValue(java.lang.Float("1"), Float::class.java))
+    }
+
     enum class EnumFrom {
         ONE, TWO, THREE
     }
