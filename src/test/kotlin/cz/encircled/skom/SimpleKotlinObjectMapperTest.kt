@@ -139,6 +139,39 @@ class SimpleKotlinObjectMapperTest {
     }
 
     @Test
+    fun `kotlin class descriptor`() {
+        val mapper = SimpleKotlinObjectMapper {
+        }
+        val descriptor = mapper.getClassDescriptor<SimpleSource>(
+            FromTo(TargetEntity::class, TargetEntity::class),
+            TargetEntity("", 1, true, listOf(), mapOf(), mapOf(), listOf(), setOf(), mutableListOf(), null)
+        )
+        assertEquals(
+            listOf("bodyMapOfConvertable", "bodyNumber"),
+            descriptor.targetPropertiesByName.map { it.key }.sorted()
+        )
+        assertEquals(
+            listOf(
+                "bodyMapOfConvertable",
+                "bodyNumber",
+                "bool",
+                "collection",
+                "collectionOfConvertable",
+                "map",
+                "mapOfConvertable",
+                "mutableListOfConvertable",
+                "name",
+                "nullableName",
+                "number",
+                "optionalName",
+                "optionalNullableName",
+                "setOfConvertable",
+            ),
+            descriptor.sourceProperties.map { it.logicalName }.sorted()
+        )
+    }
+
+    @Test
     fun `java class descriptor with getter and setter`() {
         val mapper = SimpleKotlinObjectMapper {
         }
@@ -151,8 +184,8 @@ class SimpleKotlinObjectMapperTest {
             descriptor.targetPropertiesByName.map { it.key }.sorted()
         )
         assertEquals(
-            listOf("another", "boolean", "name"),
-            descriptor.sourceProperties.map { mapper.getFieldName(it) }.sorted()
+            listOf("another", "boolean", "name", "staticName"),
+            descriptor.sourceProperties.map { it.logicalName }.sorted()
         )
     }
 
@@ -164,6 +197,56 @@ class SimpleKotlinObjectMapperTest {
 
         assertEquals(source, actual)
         assertEquals(source.getName, actual.getName)
+    }
+
+    @Test
+    fun `map with converter`() {
+        val mapper = SimpleKotlinObjectMapper {
+            addConverter(CompositeName::class, String::class) {
+                it.firstName
+            }
+            forClasses(EntityCompositeName::class, SimpleTarget::class) {
+                addPropertyAlias("name", "another")
+            }
+        }
+        val source = EntityCompositeName(CompositeName("1", "2"))
+        val actual = mapper.mapTo(source, SimpleTarget::class)
+
+        assertEquals(SimpleTarget("1", "1", null), actual)
+    }
+
+    @Test
+    fun `error when converter is missing`() {
+        val mapper = SimpleKotlinObjectMapper {
+            forClasses(EntityCompositeName::class, NestedTarget::class) {
+                addPropertyAlias("name", "another")
+                addPropertyAlias("name", "nested")
+
+                addPropertyMappings {
+                    mapOf("nestedCollection" to listOf<NestedTarget>())
+                }
+            }
+        }
+        val source = EntityCompositeName(CompositeName("1", "2"))
+        try {
+            mapper.mapTo(source, NestedTarget::class)
+        } catch (e: Exception) {
+            assertTrue(e.message!!.contains("No converter provided"))
+            return
+        }
+        fail()
+    }
+
+    @Test
+    fun `map directly convertable objects`() {
+        val mapper = SimpleKotlinObjectMapper {
+            addConverter(CompositeName::class, String::class) {
+                it.firstName
+            }
+        }
+
+        val actual = mapper.mapTo(CompositeName("1", "2"), String::class)
+        assertEquals("1", actual)
     }
 
 }

@@ -2,6 +2,8 @@ package cz.encircled.skom;
 
 public class JavaTestEntity implements Convertable {
 
+    public static String staticName = "staticName";
+
     private String name;
 
     private String another;

@@ -1,6 +1,7 @@
 package cz.encircled.skom
 
 import java.lang.reflect.Type
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.javaType
 
@@ -9,6 +10,11 @@ internal class Converter(
     private val mapper: SimpleKotlinObjectMapper
 ) {
 
+    internal fun <T : Any> isDirectlyConvertable(value: T, targetType: KClass<*>): Boolean {
+        val target = TypeWrapper(targetType.java)
+        return config.directConverter(value, target) != null || (value is Enum<*> && target.isEnum())
+    }
+
     internal fun <T : Any> convertValue(value: T?, target: KType): Any? {
         if (value == null) return null
         val javaType = target.javaType
@@ -16,7 +22,7 @@ internal class Converter(
         return convertValue(value, javaType)
     }
 
-    private fun <T : Any> convertValue(value: T?, targetType: Type): Any? {
+    internal fun <T : Any> convertValue(value: T?, targetType: Type): Any? {
         if (value == null || value::class.java == targetType) return value
         val target = TypeWrapper(targetType)
 
@@ -36,7 +42,7 @@ internal class Converter(
                 directConverter != null -> directConverter.invoke(value)
                 value is Enum<*> && target.isEnum() -> convertEnum(target, value)
                 target.type == String::class.java -> value.toString()
-                else -> value // TODO check type and throw?
+                else -> throw IllegalStateException("No converter provided for mapping ${value::class} to ${target.type}")
             }
         } else {
             // TODO support generic types as well

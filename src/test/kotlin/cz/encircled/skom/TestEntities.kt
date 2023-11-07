@@ -72,3 +72,12 @@ data class EntityFieldsAsGetter(
 ) : Convertable {
     var getName: String = ""
 }
+
+data class EntityCompositeName(
+    val name: CompositeName
+) : Convertable
+
+data class CompositeName(
+    val firstName: String,
+    val secondString: String,
+)
