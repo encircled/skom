@@ -26,7 +26,7 @@ assertEquals(To(1, "John"), mapped)
 <dependency>
     <groupId>cz.encircled</groupId>
     <artifactId>skom</artifactId>
-    <version>1.9</version>
+    <version>1.10</version>
 </dependency>
 ```
 
