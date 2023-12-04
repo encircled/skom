@@ -2,6 +2,8 @@ package cz.encircled.skom
 
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.reflect.KTypeProjection
 import kotlin.reflect.full.createType
 import kotlin.test.Test
@@ -10,16 +12,28 @@ import kotlin.test.assertTrue
 
 class ConverterTest {
 
-    internal val converter = SimpleKotlinObjectMapper {
+    val mapper = SimpleKotlinObjectMapper {
         addEnumMapping(EnumFrom::class, EnumTo::class, EnumFrom.THREE, EnumTo.FOUR)
-    }.converter
+    }
+    internal val converter = mapper.converter
 
     @Test
     fun `default convert to string`() {
+        assertEquals(12, mapper.convertValue("12", Int::class.createType()))
+        assertEquals(12, mapper.convertValue("12", Int::class))
+
         assertEquals(12, converter.convertValue("12", Int::class.createType()))
         assertEquals(12L, converter.convertValue("12", Long::class.createType()))
         assertEquals(12f, converter.convertValue("12", Float::class.createType()))
         assertEquals(BigDecimal(12), converter.convertValue("12", BigDecimal::class.createType()))
+    }
+
+    @Test
+    fun `java dates`() {
+        val nowTime = LocalDateTime.now()
+        val now = LocalDate.now()
+        assertEquals(now, mapper.convertValue(now.toString(), LocalDate::class))
+        assertEquals(nowTime, mapper.convertValue(nowTime.toString(), LocalDateTime::class))
     }
 
     @Test

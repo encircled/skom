@@ -1,6 +1,9 @@
 package cz.encircled.skom
 
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -24,6 +27,7 @@ class MappingConfig(
         if (addBasicConverters) {
             addNumberConverters()
             addStringToNumberConverters()
+            addDatesConverters()
 
             addConverter(Short::class, Boolean::class) { it == 1.toShort() }
         }
@@ -52,6 +56,11 @@ class MappingConfig(
         addConverter(String::class, Long::class) { it.toLong() }
         addConverter(String::class, Float::class) { it.toFloat() }
         addConverter(String::class, Double::class) { it.toDouble() }
+    }
+
+    private fun addDatesConverters() {
+        addConverter(String::class, LocalDateTime::class) { LocalDateTime.parse(it, DateTimeFormatter.ISO_DATE_TIME) }
+        addConverter(String::class, LocalDate::class) { LocalDate.parse(it, DateTimeFormatter.ISO_DATE) }
     }
 
     private fun addNumberConverters() {
