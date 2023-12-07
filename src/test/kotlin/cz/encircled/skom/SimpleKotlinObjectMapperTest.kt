@@ -249,4 +249,21 @@ class SimpleKotlinObjectMapperTest {
         assertEquals("1", actual)
     }
 
+    @Test
+    fun `map list of enums`() {
+        val mapper = SimpleKotlinObjectMapper {
+            forClasses(EntityWithEnums::class, TargetEntityWithEnums::class) {
+                addPropertyAlias("testEnum", "testEnumAsStr")
+                addPropertyAlias("listOfEnums", "listOfEnumsAsStr")
+            }
+        }
+
+        val actual =
+            mapper.mapTo(EntityWithEnums(TestEnum.SOME_VAL, listOf(TestEnum.SOME_VAL)), TargetEntityWithEnums::class)
+        assertEquals(TestEnum.SOME_VAL, actual.testEnum)
+        assertEquals(listOf(TestEnum.SOME_VAL), actual.listOfEnums)
+        assertEquals("SOME_VAL", actual.testEnumAsStr)
+        assertEquals(listOf("SOME_VAL"), actual.listOfEnumsAsStr)
+    }
+
 }

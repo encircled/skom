@@ -19,8 +19,8 @@ class ConverterTest {
 
     @Test
     fun `default convert to string`() {
-        assertEquals(12, mapper.convertValue("12", Int::class.createType()))
-        assertEquals(12, mapper.convertValue("12", Int::class))
+        assertEquals(12, mapper.mapTo("12", Int::class))
+        assertEquals(12, mapper.mapTo("12", Int::class))
 
         assertEquals(12, converter.convertValue("12", Int::class.createType()))
         assertEquals(12L, converter.convertValue("12", Long::class.createType()))
@@ -32,8 +32,8 @@ class ConverterTest {
     fun `java dates`() {
         val nowTime = LocalDateTime.now()
         val now = LocalDate.now()
-        assertEquals(now, mapper.convertValue(now.toString(), LocalDate::class))
-        assertEquals(nowTime, mapper.convertValue(nowTime.toString(), LocalDateTime::class))
+        assertEquals(now, mapper.mapTo(now.toString(), LocalDate::class))
+        assertEquals(nowTime, mapper.mapTo(nowTime.toString(), LocalDateTime::class))
     }
 
     @Test

@@ -2,8 +2,6 @@ package cz.encircled.skom
 
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
-import kotlin.reflect.KType
-import kotlin.reflect.full.createType
 
 typealias FromTo = Pair<KClass<*>, KClass<*>>
 typealias FromToJava = Pair<KClass<*>, Class<*>>
@@ -45,14 +43,6 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         }
 
         return targetObject
-    }
-
-    fun <T : Any, R : Any> convertValue(value: T, targetType: KClass<R>): R {
-        return converter.convertValue(value, targetType.createType()) as R
-    }
-
-    fun <T : Any> convertValue(value: T?, target: KType): Any? {
-        return converter.convertValue(value, target)
     }
 
     fun config() = config
@@ -110,6 +100,5 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
         return descriptor as MappingDescriptor<T>
     }
-
 
 }

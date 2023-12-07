@@ -29,6 +29,7 @@ class MappingConfig(
             addStringToNumberConverters()
             addDatesConverters()
 
+            addConverter(String::class, Boolean::class) { it == "true" }
             addConverter(Short::class, Boolean::class) { it == 1.toShort() }
         }
     }
