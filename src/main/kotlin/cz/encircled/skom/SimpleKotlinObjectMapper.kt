@@ -93,5 +93,4 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         return descriptor as MappingDescriptor<T>
     }
 
-
 }

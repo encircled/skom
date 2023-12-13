@@ -82,3 +82,19 @@ data class CompositeName(
     val firstName: String,
     val secondString: String,
 )
+
+data class EntityWithEnums(
+    val testEnum: TestEnum = TestEnum.SOME_VAL,
+    val listOfEnums: List<TestEnum> = listOf(),
+) : Convertable
+
+data class TargetEntityWithEnums(
+    val testEnum: TestEnum,
+    val listOfEnums: List<TestEnum>,
+    val testEnumAsStr: String,
+    val listOfEnumsAsStr: List<String>,
+)
+
+enum class TestEnum {
+    SOME_VAL;
+}
