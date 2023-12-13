@@ -42,7 +42,10 @@ it uses the instance of SKOM with default configuration, which can be overridden
 
 ```kotlin
 Extensions.setDefaultMapper(SimpleKotlinObjectMapper {
-    // config setup here
+    // configuration goes here
+    forClasses(From::class, To::class) {
+        From::name mapAs To::firstName
+    }
 })
 ```
 
