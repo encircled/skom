@@ -1,20 +1,25 @@
 package cz.encircled.skom
 
 import java.lang.reflect.Modifier
-import kotlin.reflect.KCallable
-import kotlin.reflect.KFunction
-import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
+import kotlin.reflect.*
 import kotlin.reflect.KVisibility.PUBLIC
 import kotlin.reflect.jvm.javaField
 
-internal data class MappingDescriptor<T>(
+class KParamWrapper(val param: KParameter, val isMarkedNullable: Boolean, val type: KType, val isOptional: Boolean)
+
+internal class MappingDescriptor<T>(
     val constructor: KFunction<T>,
     val sourceProperties: Collection<ObjectValueAccessor>,
     val targetProperties: Collection<ObjectValueAccessor>,
 
-    val targetPropertiesByName: Map<String, ObjectValueAccessor>,
-    val targetConstructorParamNames: List<String> = constructor.parameters.mapNotNull { it.name }
+    val constructorParams: List<KParamWrapper> = constructor.parameters.map {
+        KParamWrapper(
+            it,
+            it.type.isMarkedNullable,
+            it.type,
+            it.isOptional
+        )
+    }
 )
 
 class ObjectValueAccessor(

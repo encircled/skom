@@ -3,6 +3,7 @@ package cz.encircled.skom
 import java.math.BigDecimal
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 
 class MappingConfig(
     addBasicConverters: Boolean = true
@@ -10,7 +11,7 @@ class MappingConfig(
 
     internal var classToDescriptor: MutableMap<FromTo, MappingDescriptor<*>> = ConcurrentHashMap()
     internal val enumMappers: MutableMap<FromToJava, MutableMap<Any, Any>> = mutableMapOf()
-    internal val customMappers: MutableMap<FromTo, (Any) -> Map<String, Any?>> = mutableMapOf()
+    val customMappers: MutableMap<FromTo, CustomPropertyMapper> = mutableMapOf()
     private val propertyAliases: MutableMap<FromTo, MutableMap<String, MutableSet<String>>> = mutableMapOf()
     internal val directConverters: MutableMap<FromToJava, (Any) -> Any> = mutableMapOf()
     internal val boxedClasses = mapOf(
@@ -81,10 +82,6 @@ class MappingConfig(
         addConverter(Double::class, Int::class) { it.toInt() }
     }
 
-    internal fun <F : Any, T : Any> addMapping(from: KClass<F>, to: KClass<T>, mapper: (F) -> Map<String, Any?>) {
-        customMappers[from to to] = mapper as (Any) -> Map<String, Any?>
-    }
-
     internal fun <F : Any, T : Any> addEnumMapping(from: KClass<F>, to: KClass<T>, left: Enum<*>, right: Enum<*>) {
         val leftToRight = enumMappers.computeIfAbsent(from to to.java) { hashMapOf() }
         leftToRight[left] = right
@@ -121,8 +118,14 @@ class MappingConfig(
         val from: KClass<F>,
         val to: KClass<T>,
     ) {
+
+        fun <V> prop(prop: KProperty<V>): PropertyAsClass<F, V> {
+            return PropertyAsClass(prop, this)
+        }
+
         fun addPropertyMappings(mapper: (F) -> Map<String, Any?>): MappingConfigBuilder<F, T> {
-            config.addMapping(from, to, mapper)
+            val customPropertyMapper = customPropertyMapper()
+            customPropertyMapper.multipleMapper = mapper as (Any) -> Map<String, Any?>
             return this
         }
 
@@ -131,6 +134,29 @@ class MappingConfig(
                 config.addPropertyAlias(from, to, sourceName, it)
             }
             return this
+        }
+
+        internal fun customPropertyMapper() =
+            config.customMappers.computeIfAbsent(from to to) { CustomPropertyMapper() }
+
+    }
+
+    /**
+     * This class is needed to enforce type check at compile time, as jvm is not able to infer type from a class field
+     */
+    class PropertyAsClass<F : Any, V>(
+        private val prop: KProperty<V>,
+        private val builder: MappingConfigBuilder<F, *>
+    ) {
+
+        infix fun mapAs(value: V) {
+            val mapper = builder.customPropertyMapper()
+            mapper.addTypedMapper(prop) { value }
+        }
+
+        infix fun mapAs(map: (F) -> V) {
+            val mapper = builder.customPropertyMapper()
+            mapper.addTypedMapper(prop, map as (Any) -> Any?)
         }
 
     }

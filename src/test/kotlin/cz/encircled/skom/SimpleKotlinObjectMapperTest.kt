@@ -70,13 +70,17 @@ class SimpleKotlinObjectMapperTest {
     @Test
     fun `property custom mapping`() {
         val mapper = SimpleKotlinObjectMapper {
-            addMapping(SimpleSource::class, SimpleTarget::class) {
-                mapOf("another" to it.anotherName)
+            forClasses(SimpleSource::class, SimpleTarget::class) {
+                addPropertyMappings {
+                    mapOf("name" to "test")
+                }
+                prop(SimpleTarget::another) mapAs { it.anotherName }
+                prop(SimpleTarget::nullableName) mapAs "23"
             }
         }
 
         val actual = mapper.mapTo(SimpleSource("1", "2"), SimpleTarget::class)
-        assertEquals(SimpleTarget("1", "2", null), actual)
+        assertEquals(SimpleTarget("test", "2", "23"), actual)
     }
 
     @Test
@@ -94,6 +98,7 @@ class SimpleKotlinObjectMapperTest {
     fun `default value on null`() {
         var actual = SimpleSource("1", "2").mapTo<SimpleTargetWithDefault>()
         assertEquals("def", actual.defaultName)
+        assertTrue(actual.setWithDefault.isEmpty())
 
         val mapper = SimpleKotlinObjectMapper {
             addPropertyAlias(SimpleSource::class, SimpleTargetWithDefault::class, "nullableName", "defaultName")
@@ -148,7 +153,7 @@ class SimpleKotlinObjectMapperTest {
         )
         assertEquals(
             listOf("bodyMapOfConvertable", "bodyNumber"),
-            descriptor.targetPropertiesByName.map { it.key }.sorted()
+            descriptor.targetProperties.map { it.logicalName }.sorted()
         )
         assertEquals(
             listOf(
@@ -181,7 +186,7 @@ class SimpleKotlinObjectMapperTest {
         )
         assertEquals(
             listOf("another", "boolean", "name"),
-            descriptor.targetPropertiesByName.map { it.key }.sorted()
+            descriptor.targetProperties.map { it.logicalName }.sorted()
         )
         assertEquals(
             listOf("another", "boolean", "name", "staticName"),

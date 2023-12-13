@@ -28,18 +28,16 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         val descriptor = getClassDescriptor<T>(fromTo, from)
 
         val sourceNameToValue: MutableMap<String, Any?> = getValuesFromSource(descriptor, fromTo, from)
-        sourceNameToValue.putAll(config.customMappers[fromTo]?.invoke(from) ?: mapOf())
+        sourceNameToValue.putAll(config.customMappers[fromTo]?.mapProperties(from) ?: mapOf())
 
         val targetConstParams: MutableMap<KParameter, Any?> = buildArgsForConstructor(descriptor, sourceNameToValue)
         val targetObject = descriptor.constructor.callBy(targetConstParams)
 
-        val postConstructValues = sourceNameToValue.filter {
-            !descriptor.targetConstructorParamNames.contains(it.key) && descriptor.targetPropertiesByName.containsKey(it.key)
-        }
-
-        postConstructValues.forEach { (name, value) ->
-            val prop = descriptor.targetPropertiesByName[name]
-            prop?.setValue(targetObject, converter.convertValue(value, prop.returnType))
+        descriptor.targetProperties.forEach {
+            val v = sourceNameToValue[it.logicalName]
+            if (v != null) {
+                it.setValue(targetObject, converter.convertValue(v, it.returnType))
+            }
         }
 
         return targetObject
@@ -50,34 +48,29 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     private fun <T> buildArgsForConstructor(
         descriptor: MappingDescriptor<T>, sourceNameToValue: MutableMap<String, Any?>
     ): MutableMap<KParameter, Any?> {
-        val targetConstructorParams: MutableMap<KParameter, Any?> = HashMap(descriptor.constructor.parameters.size)
-        descriptor.constructor.parameters.forEach {
+        return descriptor.constructorParams.fold(mutableMapOf()) { result, it ->
             val hasNoDefaultValue = !it.isOptional
-
-            val value = converter.convertValue(sourceNameToValue[it.name], it.type)
-            if (value != null || (it.type.isMarkedNullable && hasNoDefaultValue)) {
-                targetConstructorParams[it] = value
+            val value = converter.convertValue(sourceNameToValue[it.param.name], it.type)
+            if (value != null || (it.isMarkedNullable && hasNoDefaultValue)) {
+                result[it.param] = value
             } else if (hasNoDefaultValue) {
-                throw IllegalStateException("Mandatory constructor arg [${it.name}] is null!")
+                throw IllegalStateException("Mandatory constructor arg [${it.param.name}] is null!")
             }
+            result
         }
-        return targetConstructorParams
     }
 
     private fun <T : Any> getValuesFromSource(
         descriptor: MappingDescriptor<T>, fromTo: Pair<KClass<out Any>, KClass<T>>, from: Any
     ): MutableMap<String, Any?> {
-        val result = mutableMapOf<String, Any?>()
-
-        descriptor.sourceProperties.forEach {
-            val value = it.getValue(from)
-            result[it.logicalName] = value
-            config.aliasesForProperty(fromTo, it.logicalName).forEach { alias ->
+        return descriptor.sourceProperties.fold(mutableMapOf()) { result, property ->
+            val value = property.getValue(from)
+            result[property.logicalName] = value
+            config.aliasesForProperty(fromTo, property.logicalName).forEach { alias ->
                 result[alias] = value
             }
+            result
         }
-
-        return result
     }
 
     internal fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {
@@ -90,12 +83,11 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
                 .filter { ObjectValueAccessor.isValidGetAccessor(it) }
                 .map { ObjectValueAccessor(it) }
 
-            MappingDescriptor(fromTo.second.constructors.first(),
+            MappingDescriptor(
+                fromTo.second.constructors.first(),
                 sourceProperties,
                 targetProperties,
-                targetProperties.associateBy {
-                    it.logicalName
-                })
+            )
         }
 
         return descriptor as MappingDescriptor<T>

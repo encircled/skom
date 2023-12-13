@@ -64,6 +64,7 @@ data class SimpleTarget(
 
 data class SimpleTargetWithDefault(
     val defaultName: String = "def",
+    var setWithDefault: MutableSet<SimpleTarget> = mutableSetOf()
 )
 
 data class EntityFieldsAsGetter(
