@@ -13,7 +13,7 @@ object Extensions {
         return map { mapper.mapTo(it, klass) }
     }
 
-    fun <T : Any> List<Convertable>.mapTo(klass : KClass<T>): List<T> {
+    fun <T : Any> List<Convertable>.mapTo(klass: KClass<T>): List<T> {
         return map { mapper.mapTo(it, klass) }
     }
 
@@ -24,7 +24,7 @@ object Extensions {
         return result
     }
 
-    fun <T : Any> Set<Convertable>.mapTo(klass : KClass<T>): Set<T> {
+    fun <T : Any> Set<Convertable>.mapTo(klass: KClass<T>): Set<T> {
         val result = HashSet<T>(size)
         forEach { result.add(mapper.mapTo(it, klass)) }
         return result
@@ -34,7 +34,7 @@ object Extensions {
         return mapper.mapTo(this, T::class)
     }
 
-    fun <T : Any> Convertable.mapTo(klass : KClass<T>): T {
+    fun <T : Any> Convertable.mapTo(klass: KClass<T>): T {
         return mapper.mapTo(this, klass)
     }
 
@@ -48,6 +48,10 @@ object Extensions {
         }
     ): T {
         return map { mapper.mapTo(it, T::class) }.orElseThrow(orElse)
+    }
+
+    fun <T : Any> Collection<Convertable>.mapManyTo(klass: KClass<T>): T {
+        return mapper.mapManyTo(klass, *this.toTypedArray())
     }
 
     fun setDefaultMapper(mapper: SimpleKotlinObjectMapper) {

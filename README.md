@@ -36,6 +36,7 @@ SKOM offers extension functions for objects implementing `cz.encircled.skom.Conv
 
 - `val mapped : To = From(...).mapTo()`
 - `val mapped : List<To> = listOf(From(...)).mapTo()`
+- `val mapped : To = listOf(From1(...), From2(...)).mapManyTo()`
 
 it uses the instance of SKOM with default configuration, which can be overridden via:
 
@@ -60,7 +61,10 @@ data class To(
 
 val mapper = SimpleKotlinObjectMapper {
     forClasses(From::class, To::class) {
-        addPropertyAlias("firstName", "name")
+        From::firstName mapAs To::name
+
+        // Or multiple aliases
+        addPropertyAlias("firstName", "name", "name2")
     }
 }
 
@@ -82,8 +86,12 @@ data class To(
 
 val mapper = SimpleKotlinObjectMapper {
     forClasses(From::class, To::class) {
+        prop(To::name) mapAs { "${it.firstName} ${it.lastName}" }
+
+        // Or to share mapping between multiple properties  
         addPropertyMappings {
-            mapOf("name" to "${it.firstName} ${it.lastName}")
+            val fullName = compute(it)
+            mapOf("name" to fullName, "name2" to fullName)
         }
     }
 }
@@ -112,7 +120,7 @@ val mapper = SimpleKotlinObjectMapper {
     }
 }
 
-val mapped: To = From(123).mapTo()
+val mapped: To = From(BigDecimal(123)).mapTo()
 assertEquals(To("123 $"), mapped)
 ```
 
@@ -124,9 +132,7 @@ Custom enums mapping is added via:
 
 ```kotlin
 SimpleKotlinObjectMapper {
-    forClasses(EnumA::class, EnumB::class) {
-        addEnumMapping(EnumA.A, EnumB.B)
-    }
+    addEnumMapping(EnumA::class, EnumB::class, EnumA.A, EnumB.B)
 }
 ```
 
@@ -171,5 +177,4 @@ config.forClasses(E::class, F::class) {
 
 ## Performance
 
-Reflection-based implementation is not very fast, approx 150 ops/ms for complex objects, thus it is not recommended for
-mapping high amount of objects (10k+)
+Reflection-based implementation is not very fast, thus it is not recommended for mapping high amount of objects (100k+)

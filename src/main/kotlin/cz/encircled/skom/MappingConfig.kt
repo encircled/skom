@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty1
 
 class MappingConfig(
     addBasicConverters: Boolean = true
@@ -129,7 +130,10 @@ class MappingConfig(
         val to: KClass<T>,
     ) {
 
-        fun <V> prop(prop: KProperty<V>): PropertyAsClass<F, V> {
+        /**
+         * Add a mapper function for the given property of target class
+         */
+        fun <V> prop(prop: KProperty1<T, V>): PropertyAsClass<F, V> {
             return PropertyAsClass(prop, this)
         }
 
@@ -139,6 +143,18 @@ class MappingConfig(
             return this
         }
 
+        /**
+         * Add alias for property, i.e. [this] source property will be mapped to [another] property on target object,
+         * possibly with type conversion if needed
+         */
+        infix fun KProperty<*>.mapAs(another: KProperty<*>) {
+            config.addPropertyAlias(from, to, this.name, another.name)
+        }
+
+        /**
+         * [sourceName] source property will be mapped to [targetNames] on target object,
+         * possibly with type conversion if needed
+         */
         fun addPropertyAlias(sourceName: String, vararg targetNames: String): MappingConfigBuilder<F, T> {
             targetNames.forEach {
                 config.addPropertyAlias(from, to, sourceName, it)

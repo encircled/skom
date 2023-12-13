@@ -1,6 +1,7 @@
 package cz.encircled.skom
 
 import cz.encircled.skom.Extensions.mapTo
+import org.junit.jupiter.api.Nested
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,14 +9,54 @@ import kotlin.test.fail
 
 class SimpleKotlinObjectMapperTest {
 
+    @Nested
+    inner class MapManyToOne {
+
+        @Test
+        fun `many to one with nullable first`() {
+            val mapper = SimpleKotlinObjectMapper {
+                forClasses(LastName::class, CompositeName::class) {
+                    LastName::lastName mapAs CompositeName::secondString
+                }
+            }
+
+            val actual = mapper.mapManyTo(CompositeName::class, NullableFirstName(), FirstName("1"), LastName("2"))
+            assertEquals(CompositeName("1", "2"), actual)
+        }
+
+        @Test
+        fun `many to one with nullable last`() {
+            val mapper = SimpleKotlinObjectMapper {
+                forClasses(LastName::class, CompositeName::class) {
+                    LastName::lastName mapAs CompositeName::secondString
+                }
+            }
+
+            val actual = mapper.mapManyTo(CompositeName::class, FirstName("1"), LastName("2"), NullableFirstName())
+            assertEquals(CompositeName("1", "2"), actual)
+        }
+
+        @Test
+        fun `many to one last value wins`() {
+            val mapper = SimpleKotlinObjectMapper {
+                forClasses(LastName::class, CompositeName::class) {
+                    LastName::lastName mapAs CompositeName::secondString
+                }
+            }
+
+            val actual = mapper.mapManyTo(CompositeName::class, FirstName("1"), LastName("2"), NullableFirstName("3"))
+            assertEquals(CompositeName("3", "2"), actual)
+        }
+
+    }
+
     @Test
     fun `map complex object`() {
         val mapper = SimpleKotlinObjectMapper {
             forClasses(Source::class, TargetEntity::class) {
                 // Test multiple aliases
-                addPropertyAlias("collectionOfConvertable", "setOfConvertable")
-                addPropertyAlias("collectionOfConvertable", "mutableListOfConvertable")
-                addPropertyAlias("number", "number", "bodyNumber")
+                Source::number mapAs TargetEntity::bodyNumber
+                addPropertyAlias("collectionOfConvertable", "setOfConvertable", "mutableListOfConvertable")
                 addPropertyAlias("mapOfConvertable", "mapOfConvertable", "bodyMapOfConvertable")
             }
         }
@@ -74,6 +115,7 @@ class SimpleKotlinObjectMapperTest {
                 addPropertyMappings {
                     mapOf("name" to "test")
                 }
+                prop(SimpleTarget::another) mapAs { it.anotherName }
                 prop(SimpleTarget::another) mapAs { it.anotherName }
                 prop(SimpleTarget::nullableName) mapAs "23"
             }

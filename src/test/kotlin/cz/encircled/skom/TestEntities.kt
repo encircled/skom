@@ -98,3 +98,7 @@ data class TargetEntityWithEnums(
 enum class TestEnum {
     SOME_VAL;
 }
+
+data class NullableFirstName(val firstName: String? = null)
+data class FirstName(val firstName: String)
+data class LastName(val lastName: String)

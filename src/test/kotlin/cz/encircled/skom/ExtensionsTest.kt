@@ -1,5 +1,6 @@
 package cz.encircled.skom
 
+import cz.encircled.skom.Extensions.mapManyTo
 import cz.encircled.skom.Extensions.mapTo
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,6 +46,16 @@ class ExtensionsTest {
 
         assertEquals(listOf(SimpleTargetWithDefault()), actual)
         assertEquals(listOf(SimpleTargetWithDefault()), actual2)
+    }
+
+    @Test
+    fun `map many to one`() {
+        val actual = listOf(
+            SimpleSource("a", "", "c"),
+            SimpleSource("a", ""),
+            SimpleSource("a", "b")
+        ).mapManyTo(SimpleSource::class)
+        assertEquals(SimpleSource("a", "b", "c"), actual)
     }
 
 }

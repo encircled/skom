@@ -15,6 +15,24 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         init(config)
     }
 
+    fun <T : Any> mapManyTo(classTo: KClass<T>, vararg many: Any): T {
+        if (many.isEmpty()) {
+            throw IllegalArgumentException("At least one source object must be provided")
+        }
+        val sourceNameToValue: MutableMap<String, Any?> = mutableMapOf()
+        var descriptor: MappingDescriptor<T>? = null
+
+        many.forEach { from ->
+            val fromTo = Pair(from::class, classTo)
+            descriptor = getClassDescriptor(fromTo, from)
+
+            sourceNameToValue.mergeAll(getValuesFromSource(descriptor!!, fromTo, from))
+            sourceNameToValue.mergeAll(config.customMappers[fromTo]?.mapProperties(from))
+        }
+
+        return constructFromSources(descriptor!!, sourceNameToValue)
+    }
+
     fun <T : Any> mapTo(from: Any, classTo: KClass<T>): T {
         if (from::class == classTo) {
             return from as T
@@ -30,6 +48,15 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         val sourceNameToValue: MutableMap<String, Any?> = getValuesFromSource(descriptor, fromTo, from)
         sourceNameToValue.putAll(config.customMappers[fromTo]?.mapProperties(from) ?: mapOf())
 
+        return constructFromSources(descriptor, sourceNameToValue)
+    }
+
+    fun config() = config
+
+    private fun <T : Any> constructFromSources(
+        descriptor: MappingDescriptor<T>,
+        sourceNameToValue: MutableMap<String, Any?>
+    ): T {
         val targetConstParams: MutableMap<KParameter, Any?> = buildArgsForConstructor(descriptor, sourceNameToValue)
         val targetObject = descriptor.constructor.callBy(targetConstParams)
 
@@ -42,8 +69,6 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
         return targetObject
     }
-
-    fun config() = config
 
     private fun <T> buildArgsForConstructor(
         descriptor: MappingDescriptor<T>, sourceNameToValue: MutableMap<String, Any?>
@@ -91,6 +116,14 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         }
 
         return descriptor as MappingDescriptor<T>
+    }
+
+    private fun <K : Any, V> MutableMap<K, V>.mergeAll(another: Map<K, V>?) {
+        another?.forEach { (k, v) ->
+            if (v != null) {
+                merge(k, v) { _, newValue -> newValue }
+            }
+        }
     }
 
 }
