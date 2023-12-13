@@ -137,6 +137,16 @@ class MappingConfig(
             return PropertyAsClass(prop, this)
         }
 
+        /**
+         * Add a mapper function for the given property of target class.
+         * Resulting value will be converted to target type if needed
+         */
+        infix fun KProperty<*>.convertAs(map: (F) -> Any?): MappingConfigBuilder<F, T> {
+            val mapper = customPropertyMapper()
+            mapper.addTypedMapper(this, map as (Any) -> Any?)
+            return this@MappingConfigBuilder
+        }
+
         fun addPropertyMappings(mapper: (F) -> Map<String, Any?>): MappingConfigBuilder<F, T> {
             val customPropertyMapper = customPropertyMapper()
             customPropertyMapper.multipleMapper = mapper as (Any) -> Map<String, Any?>

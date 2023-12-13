@@ -109,6 +109,19 @@ class SimpleKotlinObjectMapperTest {
     }
 
     @Test
+    fun `property custom mapping with convert`() {
+        val mapper = SimpleKotlinObjectMapper {
+            forClasses(EntityFieldsAsGetter::class, SimpleTarget::class) {
+                SimpleTarget::name convertAs { it.isBoolean }
+                SimpleTarget::another convertAs { it.isBoolean }
+            }
+        }
+
+        val actual = mapper.mapTo(EntityFieldsAsGetter(true, ""), SimpleTarget::class)
+        assertEquals(SimpleTarget("true", "true", null), actual)
+    }
+
+    @Test
     fun `property custom mapping`() {
         val mapper = SimpleKotlinObjectMapper {
             forClasses(SimpleSource::class, SimpleTarget::class) {

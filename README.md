@@ -91,6 +91,9 @@ val mapper = SimpleKotlinObjectMapper {
     forClasses(From::class, To::class) {
         prop(To::name) mapAs { "${it.firstName} ${it.lastName}" }
 
+        // [someNumber] will be converted to string
+        prop(To::name) convertAs { it.someNumber }
+
         // Or to share mapping between multiple properties  
         addPropertyMappings {
             val fullName = compute(it)
