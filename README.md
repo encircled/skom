@@ -92,7 +92,7 @@ val mapper = SimpleKotlinObjectMapper {
         prop(To::name) mapAs { "${it.firstName} ${it.lastName}" }
 
         // [someNumber] will be converted to string
-        prop(To::name) convertAs { it.someNumber }
+        To::name convertAs { it.someNumber }
 
         // Or to share mapping between multiple properties  
         addPropertyMappings {
