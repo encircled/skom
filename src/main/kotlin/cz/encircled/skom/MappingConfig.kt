@@ -23,6 +23,7 @@ class MappingConfig(
         Long::class.java to java.lang.Long::class.java,
         Float::class.java to java.lang.Float::class.java,
         Double::class.java to java.lang.Double::class.java,
+        Boolean::class.java to java.lang.Boolean::class.java,
     )
 
     init {

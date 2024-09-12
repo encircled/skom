@@ -101,6 +101,19 @@ class ConverterTest {
         assertEquals(1f, converter.convertValue(java.lang.Float("1"), Float::class.java))
     }
 
+    @Test
+    fun `convert string to boolean`() {
+        assertTrue(converter.isDirectlyConvertable("true", Boolean::class))
+        assertTrue(converter.isDirectlyConvertable("false", Boolean::class))
+
+        val obj = ConverterTestObject()
+        assertTrue(converter.isDirectlyConvertable("true", obj.booleanField::class))
+        assertTrue(converter.isDirectlyConvertable("true", obj::class.members.first().call(obj)!!::class))
+
+        assertEquals(true, converter.convertValue("true", Boolean::class.createType()))
+        assertEquals(false, converter.convertValue("false", Boolean::class.createType()))
+    }
+
     enum class EnumFrom {
         ONE, TWO, THREE
     }
@@ -108,5 +121,9 @@ class ConverterTest {
     enum class EnumTo {
         ONE, FOUR
     }
+
+    data class ConverterTestObject(
+        val booleanField: Boolean = true,
+    )
 
 }
