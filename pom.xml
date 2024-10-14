@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <name>skom</name>
-    <description>Simple Kotlin Object Mapper</description>
+    <description>SKOM (Simple Kotlin Object Mapper) is a lightweight Kotlin library that simplifies object-to-object mapping with minimal configuration</description>
 
     <url>https://github.com/encircled/skom/</url>
     <scm>
