@@ -1,5 +1,6 @@
 [![CI build](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml/badge.svg)](https://github.com/encircled/skom/actions/workflows/run-tests-action.yml)
 [![codecov](https://codecov.io/gh/encircled/skom/branch/main/graph/badge.svg)](https://codecov.io/gh/encircled/skom)
+[![Maven Central](https://img.shields.io/maven-central/v/cz.encircled/skom.svg?label=Maven%20Central)](https://search.maven.org/artifact/cz.encircled/skom/1.16/jar)
 
 # Simple Kotlin Object Mapper
 
