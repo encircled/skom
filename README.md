@@ -33,13 +33,13 @@ assertEquals(To(1, "John"), mapped)
 
 ## Setup
 
-SKOM offers extension functions for objects implementing `cz.encircled.skom.Convertable` interface:
+SKOM offers extension functions for objects that implement the `cz.encircled.skom.Convertable` interface:
 
 - `val mapped : To = From(...).mapTo()`
 - `val mapped : List<To> = listOf(From(...)).mapTo()`
 - `val mapped : To = listOf(From1(...), From2(...)).mapManyTo()`
 
-it uses the instance of SKOM with default configuration, which can be overridden via:
+it uses an instance of SKOM with the default configuration, which can be overridden via:
 
 ```kotlin
 Extensions.setDefaultMapper(SimpleKotlinObjectMapper {
@@ -50,7 +50,7 @@ Extensions.setDefaultMapper(SimpleKotlinObjectMapper {
 })
 ```
 
-Alternatively, instance of `SimpleKotlinObjectMapper` can be used directly
+Alternatively, an instance of `SimpleKotlinObjectMapper` can be used directly
 
 ## Property alias
 
@@ -133,9 +133,8 @@ assertEquals(To("123 $"), mapped)
 
 ## Enum mapping
 
-Enums are mapped out of the box using the name.
-
-Custom enums mapping is added via:
+Enums are mapped out of the box using their names.
+Custom enums mapping can be added via:
 
 ```kotlin
 SimpleKotlinObjectMapper {
@@ -145,7 +144,7 @@ SimpleKotlinObjectMapper {
 
 ## Complex configuration
 
-Configuration of multiple entities might be set during SKOM creation
+Mapping configuration can be set during the creation of the SKOM instance:
 
 ```kotlin
 SimpleKotlinObjectMapper {
@@ -163,7 +162,7 @@ SimpleKotlinObjectMapper {
 }
 ```
 
-or could be split like:
+or added after, as following:
 
 ```kotlin
 val mapper = SimpleKotlinObjectMapper { }
@@ -184,4 +183,4 @@ config.forClasses(E::class, F::class) {
 
 ## Performance
 
-Reflection-based implementation is not very fast, thus it is not recommended for mapping high amount of objects (100k+)
+The reflection-based implementation is not blazing fast, so it is not recommended for mapping a large number of objects (100k+)
