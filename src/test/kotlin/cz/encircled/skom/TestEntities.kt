@@ -8,6 +8,10 @@ data class NestedSource(
     val nestedCollection: List<NestedSource> = listOf(),
 ) : Convertable
 
+data class ParametrizedSource<T>(
+    val param: T
+) : Convertable
+
 data class Source(
     val name: String = "name",
     val number: BigDecimal = BigDecimal.ONE,
@@ -23,6 +27,7 @@ data class Source(
         )
     ),
     val collectionOfConvertable: List<NestedSource> = listOf(NestedSource(), NestedSource("nestedName2")),
+    val parametrizedSource : ParametrizedSource<Int> = ParametrizedSource(123)
 ) : Convertable
 
 
@@ -31,6 +36,11 @@ data class NestedTarget(
     val nested: NestedTarget?,
     val nestedCollection: List<NestedTarget>,
 )
+
+data class ParametrizedTarget<T>(
+    val param: T
+)
+
 
 data class TargetEntity(
     val name: String,
@@ -45,6 +55,7 @@ data class TargetEntity(
     val nullableName: String?,
     val optionalName: String = "optional",
     val optionalNullableName: String? = "optionalNullable",
+    val parametrizedTarget : ParametrizedTarget<Int>? = null
 ) {
     var bodyNumber: Int? = null
     var bodyMapOfConvertable: Map<String, NestedTarget>? = null

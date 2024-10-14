@@ -32,8 +32,7 @@ internal class Converter(
         }
 
         return when (value) {
-            // TODO when target is parametrized
-            is Convertable -> mapper.mapTo(value, (targetType as Class<*>).kotlin)
+            is Convertable -> mapper.mapTo(value, target.rawClass().kotlin)
             is Collection<*> -> convertCollection(target, value)
             is Map<*, *> -> convertMap(target, value)
             else -> convertSingularObject(target, value)
@@ -41,28 +40,16 @@ internal class Converter(
     }
 
     private fun <T : Any> convertSingularObject(target: TypeWrapper, value: T): Any? {
-        return if (!target.isParametrized()) {
-            val directConverter = config.directConverter(value, target)
-            when {
-                directConverter != null -> directConverter.invoke(value)
-                value is Enum<*> && target.isEnum() -> convertEnum(target, value)
-                target.type == String::class.java -> value.toString()
-                else -> {
-                    val javaClass = value.javaClass
-                    val rawClass = target.rawClass()
-                    val assignableFrom = javaClass.isAssignableFrom(rawClass)
-                    val assignableFrom2 = rawClass.isAssignableFrom(javaClass)
-                    val b = javaClass == target.rawClass()
-                    val b2 = javaClass.equals(target.rawClass())
-                    val b1 = rawClass.kotlin == value::class
-                    if (assignableFrom) {
-                        value
-                    } else throw IllegalStateException("No converter provided for mapping ${value::class} to ${target.type}")
-                }
+        val directConverter = config.directConverter(value, target)
+        return when {
+            directConverter != null -> directConverter.invoke(value)
+            value is Enum<*> && target.isEnum() -> convertEnum(target, value)
+            target.type == String::class.java -> value.toString()
+            else -> {
+                if (target.rawClass().isAssignableFrom(value.javaClass)) {
+                    value
+                } else throw IllegalStateException("No converter provided for mapping ${value::class} to ${target.type}")
             }
-        } else {
-            // TODO support generic types as well
-            value
         }
     }
 

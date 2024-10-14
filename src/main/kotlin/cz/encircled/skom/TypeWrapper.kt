@@ -2,6 +2,7 @@ package cz.encircled.skom
 
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
 import java.lang.reflect.WildcardType
 
 class TypeWrapper(val type: Type) {
@@ -15,11 +16,12 @@ class TypeWrapper(val type: Type) {
     }
 
     fun rawClass(): Class<*> {
-        val resultType = if (type is ParameterizedType) {
-            type.rawType
-        } else if (type is WildcardType) {
-            type.upperBounds?.firstOrNull() ?: type.lowerBounds?.firstOrNull()
-        } else type
+        val resultType = when (type) {
+            is ParameterizedType -> type.rawType
+            is WildcardType -> type.upperBounds?.firstOrNull() ?: type.lowerBounds?.firstOrNull()
+            is TypeVariable<*> -> type.bounds[0]
+            else -> type
+        }
 
         return resultType as Class<*>
     }

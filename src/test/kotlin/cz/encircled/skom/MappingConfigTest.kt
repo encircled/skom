@@ -2,6 +2,7 @@ package cz.encircled.skom
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class MappingConfigTest {
 
@@ -27,5 +28,20 @@ class MappingConfigTest {
 
         assertEquals(setOf("3"), mapper.config.aliasesForProperty(fromTo, "2"))
     }
+
+    @Test
+    fun testParametrized() {
+        val c = MappingConfig()
+        c.addConverter(ParametrizedObj::class, AnotherParametrizedObj::class) {
+            AnotherParametrizedObj(it.param)
+        }
+
+        val converter = c.directConverter(ParametrizedObj(""), TypeWrapper(AnotherParametrizedObj::class.java))
+        assertNotNull(converter)
+    }
+
+    class ParametrizedObj<T>(val param: T)
+
+    class AnotherParametrizedObj<T>(val param: T)
 
 }

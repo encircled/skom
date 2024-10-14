@@ -58,6 +58,7 @@ class SimpleKotlinObjectMapperTest {
                 Source::number mapAs TargetEntity::bodyNumber
                 addPropertyAlias("collectionOfConvertable", "setOfConvertable", "mutableListOfConvertable")
                 addPropertyAlias("mapOfConvertable", "mapOfConvertable", "bodyMapOfConvertable")
+                addPropertyAlias("parametrizedSource", "parametrizedTarget")
             }
         }
 
@@ -82,7 +83,8 @@ class SimpleKotlinObjectMapperTest {
             listOf(nestedTarget1, nestedTarget2),
             setOf(nestedTarget1, nestedTarget2),
             mutableListOf(nestedTarget1, nestedTarget2),
-            null
+            null,
+            parametrizedTarget = ParametrizedTarget(Source().parametrizedSource.param)
         )
         assertEquals(expected, mapped)
 
@@ -96,6 +98,13 @@ class SimpleKotlinObjectMapperTest {
                 )
             ), mapped.bodyMapOfConvertable
         )
+    }
+
+    @Test
+    fun `direct parametrized conversion`() {
+        val mapper = SimpleKotlinObjectMapper {}
+        val result = mapper.mapTo(ParametrizedSource("Test"), ParametrizedTarget::class)
+        assertEquals(ParametrizedTarget("Test"), result)
     }
 
     @Test
@@ -225,6 +234,7 @@ class SimpleKotlinObjectMapperTest {
                 "number",
                 "optionalName",
                 "optionalNullableName",
+                "parametrizedTarget",
                 "setOfConvertable",
             ),
             descriptor.sourceProperties.map { it.logicalName }.sorted()
