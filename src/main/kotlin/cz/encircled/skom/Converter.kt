@@ -1,6 +1,7 @@
 package cz.encircled.skom
 
 import java.lang.reflect.Type
+import java.util.IdentityHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.javaType
@@ -15,14 +16,14 @@ internal class Converter(
         return config.directConverter(value, target) != null || (value is Enum<*> && target.isEnum())
     }
 
-    internal fun <T : Any> convertValue(value: T?, target: KType): Any? {
+    internal fun <T : Any> convertValue(value: T?, target: KType, visited: MutableMap<Any, Any?> = IdentityHashMap()): Any? {
         if (value == null) return null
         val javaType = target.javaType
         if (value::class.java == javaType) return value
-        return convertValue(value, javaType)
+        return convertValue(value, javaType, visited)
     }
 
-    internal fun <T : Any> convertValue(value: T?, targetType: Type): Any? {
+    internal fun <T : Any> convertValue(value: T?, targetType: Type, visited: MutableMap<Any, Any?> = IdentityHashMap()): Any? {
         if (value == null || value::class.java == targetType) return value
         val target = TypeWrapper(targetType)
 
@@ -32,9 +33,9 @@ internal class Converter(
         }
 
         return when (value) {
-            is Convertable -> mapper.mapTo(value, target.rawClass().kotlin)
-            is Collection<*> -> convertCollection(target, value)
-            is Map<*, *> -> convertMap(target, value)
+            is Convertable -> mapper.mapToInternal(value, target.rawClass().kotlin, visited)
+            is Collection<*> -> convertCollection(target, value, visited)
+            is Map<*, *> -> convertMap(target, value, visited)
             else -> convertSingularObject(target, value)
         }
     }
@@ -53,22 +54,22 @@ internal class Converter(
         }
     }
 
-    private fun convertCollection(target: TypeWrapper, value: Collection<*>): Collection<Any?> {
+    private fun convertCollection(target: TypeWrapper, value: Collection<*>, visited: MutableMap<Any, Any?>): Collection<Any?> {
         val type = target.typeArgument(0)
-        val listResult = value.map { v -> convertValue(v, type) }
+        val listResult = value.map { v -> convertValue(v, type, visited) }
         return when (target.rawClass()) {
             Set::class.java -> listResult.toMutableSet()
             else -> listResult.toMutableList()
         }
     }
 
-    private fun convertMap(target: TypeWrapper, value: Map<*, *>): Map<Any?, Any?> {
+    private fun convertMap(target: TypeWrapper, value: Map<*, *>, visited: MutableMap<Any, Any?>): Map<Any?, Any?> {
         val keyType = target.typeArgument(0)
         val valueType = target.typeArgument(1)
 
         return value
-            .mapKeys { convertValue(it.key, keyType) }
-            .mapValues { convertValue(it.value, valueType) }
+            .mapKeys { convertValue(it.key, keyType, visited) }
+            .mapValues { convertValue(it.value, valueType, visited) }
     }
 
     private fun convertEnum(target: TypeWrapper, value: Any): Any? {

@@ -27,7 +27,7 @@ data class Source(
         )
     ),
     val collectionOfConvertable: List<NestedSource> = listOf(NestedSource(), NestedSource("nestedName2")),
-    val parametrizedSource : ParametrizedSource<Int> = ParametrizedSource(123)
+    val parametrizedSource: ParametrizedSource<Int> = ParametrizedSource(123)
 ) : Convertable
 
 
@@ -55,7 +55,7 @@ data class TargetEntity(
     val nullableName: String?,
     val optionalName: String = "optional",
     val optionalNullableName: String? = "optionalNullable",
-    val parametrizedTarget : ParametrizedTarget<Int>? = null
+    val parametrizedTarget: ParametrizedTarget<Int>? = null
 ) {
     var bodyNumber: Int? = null
     var bodyMapOfConvertable: Map<String, NestedTarget>? = null
@@ -108,6 +108,27 @@ data class TargetEntityWithEnums(
 
 enum class TestEnum {
     SOME_VAL;
+}
+
+class WithSelfReferenceSource : Convertable {
+    var self: WithSelfReferenceSource? = null
+}
+
+class WithSelfReferenceTarget {
+    var self: WithSelfReferenceTarget? = null
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as WithSelfReferenceTarget
+
+        return (self == null) == (other.self == null)
+    }
+
+    override fun hashCode(): Int {
+        return if (self != null) 1 else 0
+    }
+
 }
 
 data class NullableFirstName(val firstName: String? = null)

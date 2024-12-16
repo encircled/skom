@@ -336,4 +336,40 @@ class SimpleKotlinObjectMapperTest {
         assertEquals(listOf("SOME_VAL"), actual.listOfEnumsAsStr)
     }
 
+    @Test
+    fun `references infinite loop`() {
+        val mapper = SimpleKotlinObjectMapper {}
+
+        val a = WithSelfReferenceSource()
+        val b = WithSelfReferenceSource()
+        a.self = b
+        b.self = a
+
+        val mapped = mapper.mapTo(a, WithSelfReferenceTarget::class)
+
+        val expected = WithSelfReferenceTarget()
+        val expected2 = WithSelfReferenceTarget()
+        expected.self = expected2
+        expected2.self = expected
+        assertEquals(expected, mapped)
+    }
+
+    @Test
+    fun `map many - references infinite loop`() {
+        val mapper = SimpleKotlinObjectMapper {}
+
+        val a = WithSelfReferenceSource()
+        val b = WithSelfReferenceSource()
+        a.self = b
+        b.self = a
+
+        val mapped = mapper.mapManyTo(WithSelfReferenceTarget::class, a, EntityWithEnums(TestEnum.SOME_VAL, listOf(TestEnum.SOME_VAL)))
+
+        val expected = WithSelfReferenceTarget()
+        val expected2 = WithSelfReferenceTarget()
+        expected.self = expected2
+        expected2.self = expected
+        assertEquals(expected, mapped)
+    }
+
 }
