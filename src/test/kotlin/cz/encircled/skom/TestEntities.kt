@@ -114,8 +114,13 @@ class WithSelfReferenceSource : Convertable {
     var self: WithSelfReferenceSource? = null
 }
 
+class WithSelfReferenceInCollectionSource(var references: List<WithSelfReferenceInCollectionSource>) : Convertable
+
+class WithSelfReferenceInCollectionTarget(var references: List<WithSelfReferenceInCollectionTarget>)
+
 class WithSelfReferenceTarget {
     var self: WithSelfReferenceTarget? = null
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

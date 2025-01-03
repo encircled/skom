@@ -355,6 +355,19 @@ class SimpleKotlinObjectMapperTest {
     }
 
     @Test
+    fun `references infinite loop in a collection`() {
+        val mapper = SimpleKotlinObjectMapper {}
+
+        val references = mutableListOf<WithSelfReferenceInCollectionSource>()
+        val a = WithSelfReferenceInCollectionSource(references)
+        references.add(a)
+
+        val mapped = mapper.mapTo(a, WithSelfReferenceInCollectionTarget::class)
+        assertEquals(1, mapped.references.size)
+        assertEquals(mapped, mapped.references[0])
+    }
+
+    @Test
     fun `map many - references infinite loop`() {
         val mapper = SimpleKotlinObjectMapper {}
 
