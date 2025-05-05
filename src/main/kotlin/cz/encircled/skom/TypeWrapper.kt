@@ -16,19 +16,22 @@ class TypeWrapper(val type: Type) {
     }
 
     fun rawClass(): Class<*> {
+        return rawClassOfType(type)
+    }
+
+    fun isEnum(): Boolean {
+        return if (isParametrized()) false
+        else (type as Class<*>).isEnum
+    }
+
+    private fun rawClassOfType(type: Type?): Class<*> {
         val resultType = when (type) {
             is ParameterizedType -> type.rawType
             is WildcardType -> type.upperBounds?.firstOrNull() ?: type.lowerBounds?.firstOrNull()
             is TypeVariable<*> -> type.bounds[0]
             else -> type
         }
-
-        return resultType as Class<*>
-    }
-
-    fun isEnum(): Boolean {
-        return if (isParametrized()) false
-        else (type as Class<*>).isEnum
+        return resultType as? Class<*> ?: rawClassOfType(resultType)
     }
 
 }

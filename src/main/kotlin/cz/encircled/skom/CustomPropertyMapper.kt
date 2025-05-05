@@ -11,7 +11,7 @@ class CustomPropertyMapper {
         typedMappers[prop.name] = value
     }
 
-    fun mapProperties(source: Any): Map<String, Any?> {
+    fun mapProperties(source: Any): MutableMap<String, Any?> {
         return HashMap<String, Any?>(typedMappers.size + 5).apply {
             putAll(multipleMapper.invoke(source))
             typedMappers.forEach { (key, value) ->

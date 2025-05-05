@@ -28,8 +28,9 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
             val fromTo = Pair(from::class, classTo)
             descriptor = getClassDescriptor(fromTo, from)
 
-            sourceNameToValue.mergeAll(getValuesFromSource(descriptor!!, fromTo, from))
-            sourceNameToValue.mergeAll(config.customMappers[fromTo]?.mapProperties(from))
+            val customMapped = config.customMappers[fromTo]?.mapProperties(from) ?: mapOf()
+            sourceNameToValue.mergeAll(customMapped)
+            sourceNameToValue.mergeAll(getValuesFromSource(descriptor, fromTo, from, customMapped.keys))
         }
 
         return constructFromSources(many, descriptor!!, sourceNameToValue, visited)
@@ -56,10 +57,10 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
         val fromTo = Pair(from::class, classTo)
         val descriptor = getClassDescriptor<T>(fromTo, from)
 
-        val sourceNameToValue: MutableMap<String, Any?> = getValuesFromSource(descriptor, fromTo, from)
-        sourceNameToValue.putAll(config.customMappers[fromTo]?.mapProperties(from) ?: mapOf())
+        val sourceValues = config.customMappers[fromTo]?.mapProperties(from) ?: mutableMapOf()
+        sourceValues.putAll(getValuesFromSource(descriptor, fromTo, from, sourceValues.keys))
 
-        return constructFromSources(from, descriptor, sourceNameToValue, visited)
+        return constructFromSources(from, descriptor, sourceValues, visited)
     }
 
     fun config() = config
@@ -67,16 +68,16 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     private fun <T : Any> constructFromSources(
         from: Any,
         descriptor: MappingDescriptor<T>,
-        sourceNameToValue: MutableMap<String, Any?>,
+        sourceValues: MutableMap<String, Any?>,
         visited: MutableMap<Any, Any?>
     ): T {
         val targetConstParams: MutableMap<KParameter, Any?> =
-            buildArgsForConstructor(descriptor, sourceNameToValue, visited)
+            buildArgsForConstructor(descriptor, sourceValues, visited)
         val targetObject = descriptor.constructor.callBy(targetConstParams)
         visited[from] = targetObject
 
         descriptor.targetProperties.forEach {
-            val v = sourceNameToValue[it.logicalName]
+            val v = sourceValues[it.logicalName]
             if (v != null) {
                 it.setValue(targetObject, converter.convertValue(v, it.returnType, visited))
             }
@@ -87,12 +88,12 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
 
     private fun <T> buildArgsForConstructor(
         descriptor: MappingDescriptor<T>,
-        sourceNameToValue: MutableMap<String, Any?>,
+        sourceValues: MutableMap<String, Any?>,
         visited: MutableMap<Any, Any?>
     ): MutableMap<KParameter, Any?> {
         return descriptor.constructorParams.fold(mutableMapOf()) { result, it ->
             val hasNoDefaultValue = !it.isOptional
-            val value = converter.convertValue(sourceNameToValue[it.param.name], it.type, visited)
+            val value = converter.convertValue(sourceValues[it.param.name], it.type, visited)
             if (value != null || (it.isMarkedNullable && hasNoDefaultValue)) {
                 result[it.param] = value
             } else if (hasNoDefaultValue) {
@@ -103,16 +104,17 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
     }
 
     private fun <T : Any> getValuesFromSource(
-        descriptor: MappingDescriptor<T>, fromTo: Pair<KClass<out Any>, KClass<T>>, from: Any
+        descriptor: MappingDescriptor<T>, fromTo: Pair<KClass<out Any>, KClass<T>>, from: Any, excluded: Set<String>
     ): MutableMap<String, Any?> {
-        return descriptor.sourceProperties.fold(mutableMapOf()) { result, property ->
-            val value = property.getValue(from)
-            result[property.logicalName] = value
-            config.aliasesForProperty(fromTo, property.logicalName).forEach { alias ->
-                result[alias] = value
+        return descriptor.sourceProperties.filter { !excluded.contains(it.logicalName) }
+            .fold(mutableMapOf()) { result, property ->
+                val value = property.getValue(from)
+                result[property.logicalName] = value
+                config.aliasesForProperty(fromTo, property.logicalName).forEach { alias ->
+                    result[alias] = value
+                }
+                result
             }
-            result
-        }
     }
 
     internal fun <T : Any> getClassDescriptor(fromTo: FromTo, from: Any): MappingDescriptor<T> {

@@ -12,6 +12,8 @@ class TypeWrapperTest {
 
     val mapStringToInt: Map<String, Int> = mapOf()
 
+    val mapStringToList: Map<String, List<String>> = mapOf()
+
     val listOfEnums: List<TestEnum> = listOf()
 
     @Test
@@ -56,6 +58,16 @@ class TypeWrapperTest {
         assertTrue(wrapper.isParametrized())
         assertEquals(String::class.java, wrapper.typeArgument(0))
         assertEquals("java.lang.Integer", wrapper.typeArgument(1).typeName)
+    }
+
+    @Test
+    fun `map with nested generics`() {
+        val wrapper = TypeWrapper(this::mapStringToList.returnType.javaType)
+        assertEquals(Map::class.java, wrapper.rawClass())
+        assertFalse(wrapper.isEnum())
+        assertTrue(wrapper.isParametrized())
+        assertEquals(String::class.java, wrapper.typeArgument(0))
+        assertEquals("java.util.List<java.lang.String>", wrapper.typeArgument(1).typeName)
     }
 
 }
