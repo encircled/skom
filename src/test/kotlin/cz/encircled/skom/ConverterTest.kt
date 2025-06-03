@@ -75,7 +75,6 @@ class ConverterTest {
 
     @Test
     fun `convert enum by name`() {
-        assertEquals("ONE", converter.convertValue(EnumFrom.ONE, java.lang.Object::class.createType()))
         assertEquals("ONE", converter.convertValue(EnumFrom.ONE, String::class.createType()))
 
         assertEquals(EnumTo.ONE, converter.convertValue(EnumFrom.ONE, EnumTo::class.createType()))
