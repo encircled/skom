@@ -12,6 +12,8 @@ internal class Converter(
 ) {
 
     internal fun <T : Any> isDirectlyConvertable(value: T, targetType: KClass<*>): Boolean {
+        if (targetType == Any::class) return true
+
         val target = TypeWrapper(targetType.java)
         return config.directConverter(value, target) != null || (value is Enum<*> && target.isEnum())
     }
