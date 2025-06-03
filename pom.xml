@@ -12,7 +12,7 @@
 
     <url>https://github.com/encircled/skom/</url>
     <scm>
-        <connection>scm:git:git@github.com:encircled/skom.git</connection>
+        <connection>scm:git:https://github.com/encircled/skom.git</connection>
         <url>https://github.com/encircled/skom/</url>
         <tag>HEAD</tag>
     </scm>
