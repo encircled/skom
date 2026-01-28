@@ -3,6 +3,7 @@ package cz.encircled.skom
 import java.util.IdentityHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
+import kotlin.reflect.full.primaryConstructor
 
 typealias FromTo = Pair<KClass<*>, KClass<*>>
 typealias FromToJava = Pair<KClass<*>, Class<*>>
@@ -128,7 +129,7 @@ class SimpleKotlinObjectMapper(init: MappingConfig.() -> Unit) {
                 .map { ObjectValueAccessor(it) }
 
             MappingDescriptor(
-                fromTo.second.constructors.first(),
+                fromTo.second.primaryConstructor ?: fromTo.second.constructors.first(),
                 sourceProperties,
                 targetProperties,
             )
