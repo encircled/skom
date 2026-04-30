@@ -39,17 +39,17 @@ class ObjectValueAccessor(
             return visible && fieldOrSetter && !callable.isStaticField()
         }
 
-        private fun String.isBooleanGetter(): Boolean = startsWith("is") && get(2).isUpperCase()
+        private fun String.isBooleanGetter(): Boolean = length > 2 && startsWith("is") && get(2).isUpperCase()
 
         private fun KCallable<*>.isGetterFunction(): Boolean {
-            val getterName = name.startsWith("get") && name[3].isUpperCase() || name.isBooleanGetter()
+            val getterName = (name.length > 3 && name.startsWith("get") && name[3].isUpperCase()) || name.isBooleanGetter()
 
             // 0 for static callable and 1 for instance callable
             return getterName && parameters.size < 2
         }
 
         private fun KCallable<*>.isSetterFunction(): Boolean {
-            val setterName = name.startsWith("set") && name[3].isUpperCase()
+            val setterName = name.length > 3 && name.startsWith("set") && name[3].isUpperCase()
             return this is KFunction && setterName && parameters.size == 2
         }
 
